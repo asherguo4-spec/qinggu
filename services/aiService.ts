@@ -1,0 +1,327 @@
+
+import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
+
+export class SelindellAIService {
+  private async callOpenRouter(model: string, messages: any[], responseFormat?: any, signal?: AbortSignal) {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) throw new Error("未配置 OpenRouter API Key");
+
+    const body: any = {
+      model,
+      messages
+    };
+    
+    if (responseFormat) {
+      body.response_format = responseFormat;
+    }
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": typeof window !== 'undefined' ? window.location.origin : "http://localhost:3000",
+        "X-Title": "Selindell Forge"
+      },
+      body: JSON.stringify(body),
+      signal
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || `请求失败 (${response.status})`);
+    }
+
+    return await response.json();
+  }
+
+  private cleanJsonResponse(content: string): string {
+    if (!content) return "";
+    // Remove markdown code blocks if present
+    let cleaned = content.trim();
+    if (cleaned.startsWith("```")) {
+      cleaned = cleaned.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/```$/, "").trim();
+    }
+    return cleaned;
+  }
+
+  async checkCopyright(prompt: string, lang: string, signal?: AbortSignal): Promise<{ status: 'pass' | 'reject', reason?: string, suggestion?: string }> {
+    const targetLang = '简体中文';
+ 
+    const systemPrompt = `你是一个版权审查助手。请检查用户的设计提示词是否包含知名动漫、电影、游戏、品牌等受版权保护的特定IP（如唐老鸭、米老鼠、高达、保时捷等）。
+- 如果没有版权风险（例如：一只黑色的鸭子背着书包），请直接返回 JSON：{"status": "pass"}
+- 如果有版权风险（例如：黑色的唐老鸭），请返回 JSON：{"status": "reject", "reason": "包含受版权保护的IP", "suggestion": "用 ${targetLang} 写一段温柔友好的建议，告诉用户包含受版权保护的专属角色无法直接生成，并给出一个非侵权的、描述外观特征的平替建议。"}
+必须只返回合法的 JSON 字符串，不要包含任何 markdown 标记或其他文字。`;
+
+    try {
+      const data = await this.callOpenRouter(
+        "qwen/qwen3.5-flash-02-23",
+        [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        { type: "json_object" },
+        signal
+      );
+      
+      const content = data.choices[0].message.content;
+      return JSON.parse(this.cleanJsonResponse(content) || '{"status": "pass"}');
+    } catch (e: any) {
+      if (e.name === 'AbortError') throw e;
+      console.error("Copyright check error:", e);
+      // Fallback to pass if the check fails, to not block users due to our error
+      return { status: 'pass' };
+    }
+  }
+
+  async analyzeReferenceImage(base64Image: string, userPrompt: string, signal?: AbortSignal): Promise<string> {
+    try {
+      const messages = [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Analyze this image and extract the core features of the main character/subject (hair, clothing, colors, posture). Ignore the background. Convert it into a concise English description suitable for designing a 3D printable action figure. Keep it under 50 words. Additional user request: ${userPrompt}`
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: base64Image.startsWith('data:') ? base64Image : `data:image/jpeg;base64,${base64Image}`
+              }
+            }
+          ]
+        }
+      ];
+      const data = await this.callOpenRouter("qwen/qwen3.5-flash-02-23", messages, undefined, signal);
+      return data.choices[0].message.content.trim();
+    } catch (e: any) {
+      if (e.name === 'AbortError') throw e;
+      console.error("Image analysis error:", e);
+      return userPrompt || "A character";
+    }
+  }
+
+  async expandPrompt(prompt: string, signal?: AbortSignal): Promise<string> {
+    try {
+      const data = await this.callOpenRouter(
+        "qwen/qwen3.5-flash-02-23",
+        [{ role: "user", content: `你是一位手办设计师。请将 “${prompt}” 扩写成 50 字的手办描述。只返回纯中文，不要解释。` }],
+        undefined,
+        signal
+      );
+      return data.choices[0].message.content.trim() || prompt;
+    } catch (e: any) {
+      if (e.name === 'AbortError') throw e;
+      console.error("Expand prompt error:", e);
+      return prompt; 
+    }
+  }
+
+  async generateShortTitle(prompt: string, base64Image?: string | null, signal?: AbortSignal, lang?: string): Promise<string> {
+    let description = prompt;
+    if (base64Image && (prompt.length < 10 || prompt.includes("图片") || prompt.includes("image"))) {
+      description = await this.analyzeReferenceImage(base64Image, prompt, signal);
+    }
+    
+    // Choose prompt based on language
+    let promptContent = `请将 “${description}” 缩减为一个 4 到 5 个字的标题。只返回标题内容，不要任何其他文字。`;
+    let maxLength = 5;
+    
+    try {
+      const data = await this.callOpenRouter(
+        "qwen/qwen3.5-flash-02-23",
+        [{ role: "user", content: promptContent }],
+        undefined,
+        signal
+      );
+      const generated = data.choices[0].message.content.trim();
+      return generated.substring(0, maxLength) || description.substring(0, maxLength);
+    } catch (e: any) {
+      if (e.name === 'AbortError') throw e;
+      console.error("Short title generation error:", e);
+      return description.substring(0, maxLength);
+    }
+  }
+
+  async generate360Creation(prompt: string, styleSuffix: string, base64Image?: string | null, signal?: AbortSignal): Promise<string[]> {
+    let coreSubject = prompt;
+    if (base64Image) {
+      coreSubject = await this.analyzeReferenceImage(base64Image, prompt, signal);
+    }
+
+    const finalPrompt = `white background, physical action figure, ${coreSubject}, ${styleSuffix}, standing on a small and minimal support base, the word "selindell" must be clearly written on the base, simple and clean design, 3D printable structure, solid geometry, manufacturing-friendly, no overly complex details, studio lighting, high quality, a square character sheet showing both front and back views of the same figure side-by-side, perfectly proportioned, no horizontal or vertical distortion.`;
+
+    try {
+      const data = await this.callOpenRouter(
+        "seedream-4.5",
+        [{ 
+          role: "user", 
+          content: [
+            {
+              type: "text",
+              text: finalPrompt
+            }
+          ] 
+        }],
+        undefined,
+        signal
+      );
+
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error("OpenRouter 未返回任何选项 (choices)");
+      }
+
+      const message = data.choices[0].message;
+      const images: string[] = [];
+
+      // 【最关键的一步】OpenRouter 的图片生成专用字段
+      if (message.images && Array.isArray(message.images)) {
+        for (const img of message.images) {
+          const url = typeof img === 'string' ? img : (img.url || img.image_url?.url);
+          if (url) images.push(url);
+        }
+      }
+
+      // 【兜底逻辑 1】如果上面的没找到，再看 content 是否直接就是 URL
+      const content = message.content?.trim() || "";
+      if (images.length === 0 && content.startsWith("http")) {
+        images.push(content);
+      }
+
+      // 【兜底逻辑 2】如果是 Base64 文本
+      if (images.length === 0 && content.includes("data:image")) {
+        const match = content.match(/data:image\/[^;]+;base64,[^"'\s)]+/);
+        if (match) images.push(match[0]);
+      }
+      
+      // 【兜底逻辑 3】检查 OpenRouter 的其他可能结构
+      if (images.length === 0) {
+        const parts = message.parts || message.content_parts || [];
+        if (Array.isArray(parts)) {
+          for (const part of parts) {
+            if (part.image_url) images.push(part.image_url.url || part.image_url);
+            if (part.inline_data) images.push(`data:${part.inline_data.mime_type};base64,${part.inline_data.data}`);
+          }
+        }
+      }
+
+      // 如果还是空，报错并打印出 AI 到底回了什么
+      if (images.length === 0) {
+        console.log("OpenRouter 完整回复对象:", JSON.stringify(data, null, 2));
+        throw new Error(`AI 未返回图像。AI 文本内容: "${content.substring(0, 50)}..."`);
+      }
+
+      return images;
+    } catch (error: any) {
+      console.error("Image generation error:", error);
+      throw new Error(error.message || "造物引擎暂时无法响应");
+    }
+  }
+
+  async generateLoreAndStats(prompt: string, signal?: AbortSignal) {
+    try {
+      const data = await this.callOpenRouter(
+        "qwen/qwen3.5-plus-20260420",
+        [{ role: "user", content: `你是一个剧本策划。请基于描述 “${prompt}”，生成这个造物的手办名称、一段30字以内的引人入胜的背景故事、以及战斗属性。
+        必须以 JSON 格式返回，包含以下字段：
+        - title: 字符串，名称
+        - lore: 字符串，故事
+        - stats: 对象，包含 power (1-100), agility (1-100), soul (1-100), rarity (字符串 "N"|"R"|"SR"|"SSR")
+        只返回合法的 JSON 字符串，不要包含 markdown 标记。` }],
+        { type: "json_object" },
+        signal
+      );
+      
+      const content = data.choices[0].message.content;
+      return JSON.parse(this.cleanJsonResponse(content) || "{}");
+    } catch (e: any) {
+      if (e.name === 'AbortError') throw e;
+      console.error("Lore generation error:", e);
+      return { title: "未命名造物", lore: "来自异次元的灵感碎片。", stats: { power: 80, agility: 80, soul: 80, rarity: "R" } };
+    }
+  }
+
+  async generateStoryCard(prompt: string, style: string, lang: string, signal?: AbortSignal): Promise<string> {
+    const targetLang = '简体中文';
+
+    try {
+      const data = await this.callOpenRouter(
+        "qwen/qwen3.5-plus-20260420",
+        [{ 
+          role: "user", 
+          content: `你是一位顶尖的 IP 策划。请根据以下描述：“${prompt}” 和风格：“${style}”，将这个造物定义为一个独特的 IP 角色，并为其撰写一段 50 字左右的 ${targetLang} 背景故事介绍。要求文字优美、引人入胜，赋予其生命力。只返回故事内容，不要任何其他文字。` 
+        }],
+        undefined,
+        signal
+      );
+      return data.choices[0].message.content.trim() || "来自异次元的灵感碎片，承载着造物主的奇思妙想。";
+    } catch (e: any) {
+      if (e.name === 'AbortError') throw e;
+      console.error("Story card generation error:", e);
+      return "来自异次元的灵感碎片，承载着造物主的奇思妙想。";
+    }
+  }
+
+  /**
+   * Logo 生成逻辑 (用于 LogoGenerator.tsx)
+   */
+  async generateLogo(base64Image: string, stylePrompt: string, signal?: AbortSignal): Promise<string> {
+    try {
+      // 虽然用户要求全换成 Qwen3.5 Plus，但 Qwen 本身不具备图片生成能力（只具备分析能力）。
+      // 在国内上线的合规替代方案中，Seedream 4.5 是目前该应用中已配置且支持图生图的国产模型。
+      // 如果 Qwen3.5 Plus 后续支持图生图输出，可在此更换。
+      const data = await this.callOpenRouter(
+        "seedream-4.5",
+        [{ 
+          role: "user", 
+          content: [
+            {
+              type: "text",
+              text: stylePrompt
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: base64Image.startsWith('data:') ? base64Image : `data:image/jpeg;base64,${base64Image}`
+              }
+            }
+          ] 
+        }],
+        undefined,
+        signal
+      );
+
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error("OpenRouter 未返回任何内容");
+      }
+
+      const message = data.choices[0].message;
+      let imageUrl = "";
+
+      if (message.images && message.images[0]) {
+        imageUrl = typeof message.images[0] === 'string' ? message.images[0] : (message.images[0].url || message.images[0].image_url?.url);
+      } else if (message.content?.startsWith("http")) {
+        imageUrl = message.content.trim();
+      } else {
+        // 检查各种可能的 OpenRouter 结构
+        const parts = message.parts || message.content_parts || [];
+        for (const part of parts) {
+          if (part.image_url) {
+            imageUrl = part.image_url.url || part.image_url;
+            break;
+          }
+        }
+      }
+
+      if (!imageUrl) throw new Error("AI 未生成有效的 Logo 图片 URL");
+      return imageUrl;
+    } catch (error: any) {
+      console.error("Logo generation error:", error);
+      throw error;
+    }
+  }
+}
+
+export const aiService = new SelindellAIService();
+export const geminiService = aiService;

@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #a855f7;
+  --bg-deep: #F8F9FB;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-deep);
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+#initial-loader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  z-index: 9999;
+}
+
+.loader-dot {
+  width: 16px;
+  height: 16px;
+  background: #a855f7;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.8;
+  }
+}
+
+.purple-gradient {
+  background: linear-gradient(135deg, #a855f7 0%, #d946ef 100%);
+}
+
+@keyframes pulsing-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.7);
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulsing-glow {
+  animation: pulsing-glow 2s infinite ease-in-out;
+}
+
+/* Skeleton Loading */
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.05) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.dark .skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+  background-size: 200% 100%;
+}
+
+/* Unified Spacing & Transitions */
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1 active:scale-[0.98];
+}
+
+.btn-click {
+  @apply active:scale-95 transition-transform duration-200;
+}
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm;
+}
+
+.dark .glass-card {
+  @apply bg-[#2d1b4e]/70 backdrop-blur-xl border-purple-800/30 shadow-lg;
+}

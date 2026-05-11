@@ -1,0 +1,147 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "avatar": { "type": "string" }
+      },
+      "required": ["id", "email"]
+    },
+    "Address": {
+      "title": "Address",
+      "description": "User shipping address",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "is_default": { "type": "boolean" }
+      },
+      "required": ["id", "user_id", "name", "phone", "address"]
+    },
+    "Work": {
+      "title": "Work",
+      "description": "User generated creations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "prompt": { "type": "string" },
+        "image_url": { "type": "string" },
+        "style": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "user_id", "image_url"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "User orders for creations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "design_id": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "user_id", "design_id", "status"]
+    },
+    "Like": {
+      "title": "Like",
+      "description": "User likes on works",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "design_id": { "type": "string" }
+      },
+      "required": ["user_id", "design_id"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "User favorites",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "design_id": { "type": "string" }
+      },
+      "required": ["user_id", "design_id"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "User feedback and customer service requests",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "content": { "type": "string" }
+      },
+      "required": ["user_id", "content"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notifications for a user",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "message": { "type": "string" },
+        "is_read": { "type": "boolean" }
+      },
+      "required": ["user_id", "message"]
+    },
+    "Log": {
+      "title": "Log",
+      "description": "System event logs",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["action"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": { "$ref": "User" },
+      "description": "User profiles"
+    },
+    "addresses": {
+      "schema": { "$ref": "Address" },
+      "description": "User addresses"
+    },
+    "works": {
+      "schema": { "$ref": "Work" },
+      "description": "Creations and generated 3D models"
+    },
+    "orders": {
+      "schema": { "$ref": "Order" },
+      "description": "Orders for physical models"
+    },
+    "likes": {
+      "schema": { "$ref": "Like" },
+      "description": "Likes (many to many)"
+    },
+    "favorites": {
+      "schema": { "$ref": "Favorite" },
+      "description": "Favorites (many to many)"
+    },
+    "feedbacks": {
+      "schema": { "$ref": "Feedback" },
+      "description": "User feedbacks"
+    },
+    "notifications": {
+      "schema": { "$ref": "Notification" },
+      "description": "User notifications"
+    },
+    "logs": {
+      "schema": { "$ref": "Log" },
+      "description": "Audit and event logs"
+    }
+  }
+}

@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitives
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return request.auth.token.email_verified == true; }
+    function isAdmin() { return false; } // No admin role currently implemented
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // Phase 4: Validation Blueprints
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'nickname']) &&
+             data.id == request.auth.uid &&
+             data.nickname is string && data.nickname.size() <= 100;
+    }
+
+    function isValidAddress(data) {
+      return data.keys().hasAll(['user_id', 'name', 'phone', 'location', 'is_default']) &&
+             data.user_id == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() <= 20 &&
+             data.location is string && data.location.size() <= 500;
+    }
+
+    function isValidWork(data) {
+      return data.keys().hasAll(['id', 'user_id']) &&
+             data.user_id == request.auth.uid;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['user_id']) &&
+             data.user_id == request.auth.uid;
+    }
+
+    function isValidLike(data) {
+      return data.keys().hasAll(['user_id', 'design_id']) &&
+             data.user_id == request.auth.uid;
+    }
+
+    function isValidFavorite(data) {
+      return data.keys().hasAll(['user_id', 'design_id']) &&
+             data.user_id == request.auth.uid;
+    }
+
+    function isValidFeedback(data) {
+      return data.keys().hasAll(['user_id', 'content']) &&
+             data.user_id == request.auth.uid &&
+             data.content is string && data.content.size() <= 2000;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['target_user_id', 'is_read']);
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(userId) && userId == request.auth.uid && isValidUser(incoming());
+      allow update: if isSignedIn() && isValidId(userId) && userId == request.auth.uid && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['nickname', 'avatar', 'bio', 'updated_at']);
+      allow delete: if false;
+    }
+
+    match /addresses/{addressId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidAddress(incoming());
+      allow update: if isSignedIn() && existing().user_id == request.auth.uid && isValidAddress(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'location', 'is_default', 'updated_at']);
+      allow delete: if isSignedIn() && existing().user_id == request.auth.uid;
+    }
+
+    match /works/{workId} {
+      allow read: if true; // Publicly readable on the square
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && existing().user_id == request.auth.uid &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updated_at', 'style', 'prompt', 'image_url', 'title', 'image_urls', 'video_url', 'lore', 'stats', 'story_card', 'created_at']);
+      allow delete: if isSignedIn() && existing().user_id == request.auth.uid;
+    }
+
+    match /orders/{orderId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidOrder(incoming());
+      allow update: if isSignedIn() && existing().user_id == request.auth.uid &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updated_at']);
+      allow delete: if false; // Orders cannot be deleted by users
+    }
+
+    match /likes/{likeId} {
+      allow read: if true; // Publicly readable for counts and statuses
+      allow create: if isSignedIn() && isValidLike(incoming());
+      allow update: if false; // Likes are only created or deleted
+      allow delete: if isSignedIn() && existing().user_id == request.auth.uid;
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidFavorite(incoming());
+      allow update: if false;
+      allow delete: if isSignedIn() && existing().user_id == request.auth.uid;
+    }
+
+    match /feedbacks/{feedbackId} {
+      allow create: if isSignedIn() && isValidFeedback(incoming());
+      allow read, update, delete: if false; // Feedbacks are write-only for users
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); // allow creates by other user for use_prompt
+      allow update: if isSignedIn() && existing().target_user_id == request.auth.uid &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['is_read', 'updated_at']);
+      allow delete: if isSignedIn() && existing().target_user_id == request.auth.uid;
+    }
+
+    match /logs/{logId} {
+      allow create: if isSignedIn() && incoming().keys().hasAll(['action']) && 
+                    (!incoming().keys().hasAny(['user_id']) || incoming().user_id == request.auth.uid);
+      allow read, update, delete: if false; // Write-only logs
+    }
+  }
+}

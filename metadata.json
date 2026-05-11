@@ -1,0 +1,7 @@
+{
+  "name": "倾谷",
+  "description": "An AI-powered creation platform for personalized action figures and artwork. Input your inspiration, choose a style, and let Selindell bring it to life.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
