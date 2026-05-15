@@ -18,9 +18,11 @@
     "express": "^5.2.1",
     "firebase": "^12.13.0",
     "ga-payment-sdk": "^1.1.0",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-qr-code": "^2.0.21",
     "tsx": "^4.21.0"
   },
   "devDependencies": {

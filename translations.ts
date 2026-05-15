@@ -8,13 +8,13 @@ const zh = {
       confirm: '确认',
       cancel: '取消',
       loading: '正在加载...',
-      error: '出错了',
+      error: '网络开小差了，请稍后再试',
       success: '操作成功',
       edit: '编辑',
       delete: '删除',
       ok: '好的'
     },
-    nav: { home: '3d工作台', square: '探索', messages: '消息', orders: '订单', profile: '我的' },
+    nav: { home: '3d工作台', square: '探索', messages: '消息', orders: '我的订单', profile: '我的' },
     home: {
       tag: '人人都是造物主',
       title: '造物',
@@ -172,7 +172,6 @@ const zh = {
       validateZip: '请填写邮编。',
       validateAddress: '请选择一个收货地址。',
       summaryTitle: '结算摘要',
-      paypalError: '支付处理失败，请尝试其他卡片。',
       shareTitle: '公开展示作品',
       shareSub: '将您的造物灵感同步至广场，激发更多创作者的灵感。',
       shareBtn: '同步至灵感广场',

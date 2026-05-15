@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { GeneratedCreation, AppView } from '../types';
-import { ChevronLeft, Package, Truck, CheckCircle, Clock, MapPin, Share2, Globe, Lock, Info, Loader2, Sparkles } from 'lucide-react';
+import { ChevronLeft, Package, Truck, CheckCircle, Clock, MapPin, Share2, Globe, Lock, Info, Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { translations, LanguageCode } from '../translations';
 import { db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import SharePopup from '../components/SharePopup';
 
 interface OrderDetailProps {
   lang: LanguageCode;
@@ -21,6 +22,8 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ lang, order, onBack, theme, u
   const [isForSale, setIsForSale] = useState(order.isForSale || false);
   const [currentSalePrice, setCurrentSalePrice] = useState(order.salePrice || null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const [showSharePopup, setShowSharePopup] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -123,17 +126,26 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ lang, order, onBack, theme, u
   return (
     <div className={`min-h-screen pb-32 animate-in slide-in-from-right duration-300 transition-colors duration-500 ${theme === 'dark' ? 'bg-[#1a0b2e]' : 'bg-[#F8F9FB]'}`}>
       {/* Header */}
-      <div className="flex items-center space-x-4 mb-8 pt-8 px-1">
-        <button 
-          onClick={onBack} 
-          className={`p-3 rounded-full shadow-sm border active:scale-90 transition-all ${theme === 'dark' ? 'bg-purple-900/40 text-purple-300 border-purple-800/50' : 'bg-white text-gray-400 border-gray-100'}`}
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <div>
-          <h2 className={`text-2xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{t.title}</h2>
-          <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${theme === 'dark' ? 'text-purple-400/60' : 'text-gray-400'}`}>ORD-{order.id.slice(0, 8).toUpperCase()}</p>
+      <div className="flex items-center justify-between mb-8 pt-8 px-1">
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={onBack} 
+            className={`p-3 rounded-full shadow-sm border active:scale-90 transition-all ${theme === 'dark' ? 'bg-purple-900/40 text-purple-300 border-purple-800/50' : 'bg-white text-gray-400 border-gray-100'}`}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div>
+            <h2 className={`text-2xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{t.title}</h2>
+            <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${theme === 'dark' ? 'text-purple-400/60' : 'text-gray-400'}`}>ORD-{order.id.slice(0, 8).toUpperCase()}</p>
+          </div>
         </div>
+        <button
+          onClick={() => setShowSharePopup(true)}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-sm border ${theme === 'dark' ? 'bg-purple-900/50 border-purple-800/50 text-purple-300 hover:bg-purple-800/70' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+        >
+          <Share2 size={16} />
+          <span>{lang === 'zh' ? '分享海报' : 'Share'}</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -319,6 +331,10 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ lang, order, onBack, theme, u
             <span>{toastMessage}</span>
           </div>
         </div>
+      )}
+
+      {showSharePopup && (
+        <SharePopup order={order} theme={theme} onClose={() => setShowSharePopup(false)} />
       )}
     </div>
   );

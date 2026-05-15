@@ -48,16 +48,6 @@ const AboutUs: React.FC<AboutUsProps> = ({ lang, onBack, theme }) => {
           <p className={`text-[11px] font-black uppercase tracking-[0.4em] ${theme === 'dark' ? 'text-purple-400/40' : 'text-gray-400'}`}>Yuone Tech Ecosystem</p>
           <div className={`h-[1px] w-4 ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-200'}`}></div>
         </div>
-        
-        {/* 社交媒体 */}
-        <div className="flex items-center justify-center space-x-4 mt-8">
-           <a href="https://instagram.com/selindell" target="_blank" rel="noopener noreferrer" className={`p-3 rounded-2xl border transition-all ${theme === 'dark' ? 'bg-purple-900/40 border-purple-800/50 text-purple-400 hover:text-pink-500' : 'bg-gray-50 border-gray-100 text-gray-400 hover:text-pink-500'}`}>
-             <Instagram size={20} />
-           </a>
-           <a href="https://twitter.com/selindell" target="_blank" rel="noopener noreferrer" className={`p-3 rounded-2xl border transition-all ${theme === 'dark' ? 'bg-purple-900/40 border-purple-800/50 text-purple-400 hover:text-blue-400' : 'bg-gray-50 border-gray-100 text-gray-400 hover:text-blue-400'}`}>
-             <Twitter size={20} />
-           </a>
-        </div>
       </div>
 
       <div className="space-y-12 relative z-10">

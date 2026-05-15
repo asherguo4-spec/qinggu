@@ -20,6 +20,9 @@ import { translations, LanguageCode } from './translations';
 import { Globe, ChevronDown, Home as HomeIcon, Compass, ShoppingBag, User as UserIcon, Sun, Moon, MessageSquare, Menu, X, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 
 
+import CustomerServiceFloat from './components/CustomerServiceFloat';
+import WechatOverlay from './components/WechatOverlay';
+
 const App: React.FC = () => {
   // 1. 所有的 Hook 必须放在组件的最顶部，绝对不能放在任何 if 之后
   const [currentView, setCurrentView] = useState<AppView>(AppView.HOME);
@@ -101,7 +104,7 @@ const App: React.FC = () => {
     id: id || '',
     shortId: generateShortId(id || ''),
     nickname: id ? (lang === 'zh' ? '加载中...' : 'Loading...') : (lang === 'zh' ? '欢迎' : 'Welcome'),
-    avatar: `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${id || 'guest'}`,
+    avatar: `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2E4NTVmNyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkeT0iLjE0ZW0iIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iNDAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5VSTwvdGV4dD48L3N2Zz4=`,
     email: '',
     bio: id ? (lang === 'zh' ? '正在获取用户信息...' : 'Fetching profile...') : (lang === 'zh' ? '探索您的3d工作台' : 'Explore your 3D workbench'),
     isRegistered: !!id,
@@ -132,12 +135,6 @@ const App: React.FC = () => {
       handleAuthChange(user).catch(e => console.warn("Auth change handler failed", e));
     });
 
-    // Handle redirect from Whop
-    if (window.location.pathname === '/order-success' || window.location.pathname === '/success') {
-      setCurrentView(AppView.SUCCESS);
-      window.history.replaceState({}, document.title, '/');
-    }
-
     return () => unsubscribe();
   }, []);
 
@@ -164,7 +161,7 @@ const App: React.FC = () => {
           shortId: generateShortId(uid),
           nickname: profileData.nickname,
           bio: profileData.bio || (lang === 'zh' ? '欢迎回来' : 'Welcome back'),
-          avatar: profileData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileData.nickname}`,
+          avatar: profileData.avatar || `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2E4NTVmNyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkeT0iLjE0ZW0iIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5VU0VSPC90ZXh0Pjwvc3ZnPg==`,
           email: user.email || '',
           isRegistered: true,
           level: level,
@@ -552,6 +549,8 @@ const App: React.FC = () => {
 
         {/* Bottom Tab Bar Removed as per user request */}
       </div>
+      <CustomerServiceFloat theme={theme} />
+      <WechatOverlay />
     </div>
   );
 };

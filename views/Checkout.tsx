@@ -578,7 +578,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
               </div>
 
               <div className="relative w-full mt-4 min-h-[60px] space-y-6">
-                {/* Whop 支付按钮 */}
+                {/* 支付按钮 */}
                 <button
                   onClick={async () => {
                     if (!isFormValid) {
