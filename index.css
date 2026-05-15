@@ -1,13 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", STHeiti, "Microsoft Yahei", Tahoma, Simsun, sans-serif;
+}
+
 :root {
-  --primary: #a855f7;
-  --bg-deep: #F8F9FB;
+  --primary: #FF4A26; /* Premium Action Orange/Red */
+  --bg-deep: #F7F8FA; /* E-commerce light gray background */
+  --ink: #111111;
+  --surface: #FFFFFF;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   background-color: var(--bg-deep);
+  color: var(--ink);
   margin: 0;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
@@ -31,7 +39,7 @@ body {
 .loader-dot {
   width: 16px;
   height: 16px;
-  background: #a855f7;
+  background: var(--primary);
   border-radius: 50%;
   animation: pulse 1.5s infinite;
 }
@@ -48,16 +56,16 @@ body {
 }
 
 .purple-gradient {
-  background: linear-gradient(135deg, #a855f7 0%, #d946ef 100%);
+  background: linear-gradient(135deg, #FF4A26 0%, #FF8A00 100%);
 }
 
 @keyframes pulsing-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+    box-shadow: 0 0 20px rgba(255, 74, 38, 0.2);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 40px rgba(168, 85, 247, 0.7);
+    box-shadow: 0 0 40px rgba(255, 74, 38, 0.4);
     transform: scale(1.02);
   }
 }
@@ -93,9 +101,9 @@ body {
 }
 
 .glass-card {
-  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm;
+  @apply bg-white/90 backdrop-blur-xl border border-black/5 shadow-sm rounded-2xl;
 }
 
 .dark .glass-card {
-  @apply bg-[#2d1b4e]/70 backdrop-blur-xl border-purple-800/30 shadow-lg;
+  @apply bg-[#1C1C1E]/90 backdrop-blur-xl border border-white/5 shadow-lg rounded-2xl;
 }

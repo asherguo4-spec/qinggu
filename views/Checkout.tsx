@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, MapPin, CheckCircle2, ShieldCheck, Mail, Globe, Lock, Loader2, Sparkles } from 'lucide-react';
 import { GeneratedCreation, Address, AppView } from '../types';
 import { uploadImage, db } from '../lib/firebase';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { auth } from '../lib/firebase';
 import { aiService } from '../services/aiService';
 import { translations, LanguageCode } from '../translations';
@@ -59,6 +59,10 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   const [isShared, setIsShared] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'wechat' | 'alipay'>('wechat');
+  const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
+  const [guestEmailForOrder, setGuestEmailForOrder] = useState<string>('');
   const [isFormValid, setIsFormValid] = useState(false);
   const [isSdkLoading, setIsSdkLoading] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -555,7 +559,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
             <div className="space-y-6">
               <div className="flex justify-between items-center text-sm">
                 <span className={`font-bold uppercase tracking-tighter ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.unitPrice}</span>
-                <span className={`font-black ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>$129.00</span>
+                <span className={`font-black ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>¥299.00</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className={`font-bold uppercase tracking-tighter ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.shipping}</span>
@@ -570,7 +574,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
               <div className={`h-[1px] my-6 ${theme === 'dark' ? 'bg-purple-800/30' : 'bg-gray-50'}`}></div>
               <div className="flex justify-between items-end mb-10">
                 <span className={`font-black text-xs uppercase tracking-widest mb-1.5 ${theme === 'dark' ? 'text-purple-500' : 'text-gray-400'}`}>{t.total}</span>
-                <span className={`text-5xl font-black tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>$129</span>
+                <span className={`text-5xl font-black tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>¥299</span>
               </div>
 
               <div className="relative w-full mt-4 min-h-[60px] space-y-6">
@@ -611,7 +615,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                         title: creation.title,
                         prompt: creation.prompt,
                         style: creation.style,
-                        amount: 129,
+                        amount: 299,
                         status: 'pending',
                         is_public: false,
                         story_card: creation.storyCard,
@@ -631,10 +635,12 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                       };
 
                       const docRef = await addDoc(collection(db, 'orders'), orderPayload);
+                      setOrderId(docRef.id);
+                      setGuestEmailForOrder(userEmail);
 
-                      // 3. 跳转到 Whop 结账链接，并附带邮箱参数
-                      const whopCheckoutUrl = `https://whop.com/checkout/plan_E8n2gzIYwsotr?email=${encodeURIComponent(userEmail)}`;
-                      window.location.href = whopCheckoutUrl;
+                      // 3. 显示模拟支付弹窗
+                      setIsProcessing(false);
+                      setShowPaymentModal(true);
 
                     } catch (error: any) {
                       console.error("下单错误:", error);
@@ -652,7 +658,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                   disabled={isProcessing}
                 >
                   <Globe size={18} />
-                  <span>{lang === 'zh' ? '去付款 (Checkout)' : 'Checkout'}</span>
+                  <span>{lang === 'zh' ? '去付款 (支持微信/支付宝)' : 'Checkout'}</span>
                 </button>
 
                 {/* 处理中遮罩 (Processing Overlay) */}
@@ -660,10 +666,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                   <div className={`absolute inset-0 backdrop-blur-md z-20 flex flex-col items-center justify-center rounded-2xl ${theme === 'dark' ? 'bg-purple-900/90' : 'bg-white/90'}`}>
                     <Loader2 size={28} className="animate-spin text-blue-500 mb-4" />
                     <span className={`text-sm font-black uppercase tracking-widest text-center px-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      {lang === 'zh' ? '正在前往安全支付...' : 'Redirecting to checkout...'}
-                    </span>
-                    <span className={`text-[10px] font-bold mt-2 text-center px-4 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-500'}`}>
-                      {lang === 'zh' ? '请等待5秒，不要关闭页面' : 'Please wait ~5 seconds, do not close this page'}
+                      {lang === 'zh' ? '正在生成订单...' : 'Creating order...'}
                     </span>
                   </div>
                 )}
@@ -704,6 +707,91 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
             </div>
           </div>
         </div>
+
+        {/* 支付方式弹窗 (Payment Modal) */}
+        {showPaymentModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSimulatingPayment && setShowPaymentModal(false)}></div>
+            <div className={`relative w-full max-w-sm rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200 ${theme === 'dark' ? 'bg-[#1a0b2e] border-purple-800' : 'bg-white border-gray-100'} border`}>
+              <h3 className={`text-2xl font-black mb-6 text-center ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                收银台
+              </h3>
+              
+              <div className="space-y-4 mb-8">
+                <button 
+                  onClick={() => setPaymentMethod('wechat')}
+                  className={`w-full flex items-center space-x-4 p-4 rounded-2xl border-2 transition-all ${
+                    paymentMethod === 'wechat' 
+                      ? (theme === 'dark' ? 'border-[#07C160] bg-[#07C160]/10' : 'border-[#07C160] bg-[#07C160]/5') 
+                      : (theme === 'dark' ? 'border-purple-800/30 hover:border-purple-600/50' : 'border-gray-100 hover:border-gray-300')
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#07C160] flex items-center justify-center">
+                    <Sparkles className="text-white" size={20} />
+                  </div>
+                  <span className={`font-black text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>微信支付</span>
+                </button>
+
+                <button 
+                  onClick={() => setPaymentMethod('alipay')}
+                  className={`w-full flex items-center space-x-4 p-4 rounded-2xl border-2 transition-all ${
+                    paymentMethod === 'alipay' 
+                      ? (theme === 'dark' ? 'border-[#1677FF] bg-[#1677FF]/10' : 'border-[#1677FF] bg-[#1677FF]/5') 
+                      : (theme === 'dark' ? 'border-purple-800/30 hover:border-purple-600/50' : 'border-gray-100 hover:border-gray-300')
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#1677FF] flex items-center justify-center">
+                    <CheckCircle2 className="text-white" size={20} />
+                  </div>
+                  <span className={`font-black text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>支付宝支付</span>
+                </button>
+              </div>
+
+              <button
+                onClick={async () => {
+                  if (!orderId) return;
+                  setIsSimulatingPayment(true);
+                  try {
+                    // Simulate processing
+                    await new Promise(r => setTimeout(r, 1500));
+                    await updateDoc(doc(db, 'orders', orderId), { status: 'paid' });
+                    setShowPaymentModal(false);
+                    setIsSuccess(true);
+                    setTimeout(() => {
+                      onPaymentComplete(creation.id, guestEmailForOrder);
+                    }, 3000);
+                  } catch (e) {
+                    console.error('Payment simulation error:', e);
+                  } finally {
+                    setIsSimulatingPayment(false);
+                  }
+                }}
+                disabled={isSimulatingPayment}
+                className={`w-full py-4 rounded-full font-black text-lg transition-all flex items-center justify-center space-x-2 ${
+                  isSimulatingPayment ? 'opacity-50 cursor-not-allowed ' : ''
+                }${
+                  paymentMethod === 'wechat' ? 'bg-[#07C160] hover:bg-[#06ad56] text-white shadow-[#07C160]/50' : 'bg-[#1677FF] hover:bg-[#156ce5] text-white shadow-[#1677FF]/50'
+                } shadow-lg`}
+              >
+                {isSimulatingPayment ? (
+                  <Loader2 size={24} className="animate-spin" />
+                ) : (
+                  <span>确认支付 ¥299</span>
+                )}
+              </button>
+              
+              {!isSimulatingPayment && (
+                <button 
+                  onClick={() => setShowPaymentModal(false)}
+                  className={`w-full mt-4 py-3 rounded-full font-bold text-sm ${theme === 'dark' ? 'text-gray-400 hover:text-white bg-white/5' : 'text-gray-500 hover:text-gray-900 bg-black/5'}`}
+                >
+                  取消
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

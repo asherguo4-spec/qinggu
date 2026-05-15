@@ -142,7 +142,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    document.body.style.backgroundColor = theme === 'dark' ? '#1a0b2e' : '#F8F9FB';
+    document.body.style.backgroundColor = theme === 'dark' ? '#0F0F13' : '#F7F8FA';
   }, [theme]);
 
   const handleAuthChange = async (user: User | null) => {
@@ -550,51 +550,7 @@ const App: React.FC = () => {
           )}
         </main>
 
-        {/* Bottom Tab Bar (Removed for mobile) */}
-        {/* {[AppView.HOME, AppView.SQUARE, AppView.MESSAGES, AppView.ORDERS, AppView.PROFILE, AppView.RESULT].includes(currentView) && !isLoadingProfile && (
-          <nav className={`fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-20 backdrop-blur-xl border-t flex items-center justify-around px-4 z-50 transition-colors duration-500 md:hidden ${theme === 'dark' ? 'bg-[#1a0b2e]/80 border-purple-900/30' : 'bg-white/80 border-gray-100'}`}>
-            <button 
-              onClick={() => setCurrentView(AppView.HOME)}
-              className={`flex flex-col items-center space-y-1 transition-all active:scale-90 ${currentView === AppView.HOME ? 'text-purple-500' : theme === 'dark' ? 'text-purple-300/40' : 'text-slate-400'}`}
-            >
-              <HomeIcon size={24} strokeWidth={currentView === AppView.HOME ? 2.5 : 2} />
-              <span className={`text-[10px] font-black uppercase tracking-tighter ${theme === 'dark' && currentView !== AppView.HOME ? 'text-purple-300/40' : ''}`}>{navT.home}</span>
-            </button>
-            <button 
-              onClick={() => setCurrentView(AppView.SQUARE)}
-              className={`flex flex-col items-center space-y-1 transition-all active:scale-90 ${currentView === AppView.SQUARE ? 'text-purple-500' : theme === 'dark' ? 'text-purple-300/40' : 'text-slate-400'}`}
-            >
-              <Compass size={24} strokeWidth={currentView === AppView.SQUARE ? 2.5 : 2} />
-              <span className={`text-[10px] font-black uppercase tracking-tighter ${theme === 'dark' && currentView !== AppView.SQUARE ? 'text-purple-300/40' : ''}`}>{navT.square}</span>
-            </button>
-            <button 
-              onClick={() => setCurrentView(AppView.MESSAGES)}
-              className={`flex flex-col items-center space-y-1 transition-all active:scale-90 relative ${currentView === AppView.MESSAGES ? 'text-purple-500' : theme === 'dark' ? 'text-purple-300/40' : 'text-slate-400'}`}
-            >
-              <div className="relative">
-                <MessageSquare size={24} strokeWidth={currentView === AppView.MESSAGES ? 2.5 : 2} />
-                {unreadMessages > 0 && (
-                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#1a0b2e] shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
-                )}
-              </div>
-              <span className={`text-[10px] font-black uppercase tracking-tighter ${theme === 'dark' && currentView !== AppView.MESSAGES ? 'text-purple-300/40' : ''}`}>{navT.messages}</span>
-            </button>
-            <button 
-              onClick={() => setCurrentView(AppView.ORDERS)}
-              className={`flex flex-col items-center space-y-1 transition-all active:scale-90 ${currentView === AppView.ORDERS ? 'text-purple-500' : theme === 'dark' ? 'text-purple-300/40' : 'text-slate-400'}`}
-            >
-              <ShoppingBag size={24} strokeWidth={currentView === AppView.ORDERS ? 2.5 : 2} />
-              <span className={`text-[10px] font-black uppercase tracking-tighter ${theme === 'dark' && currentView !== AppView.ORDERS ? 'text-purple-300/40' : ''}`}>{navT.orders}</span>
-            </button>
-            <button 
-              onClick={() => setCurrentView(AppView.PROFILE)}
-              className={`flex flex-col items-center space-y-1 transition-all active:scale-90 ${currentView === AppView.PROFILE ? 'text-purple-500' : theme === 'dark' ? 'text-purple-300/40' : 'text-slate-400'}`}
-            >
-              <User size={24} strokeWidth={currentView === AppView.PROFILE ? 2.5 : 2} />
-              <span className={`text-[10px] font-black uppercase tracking-tighter ${theme === 'dark' && currentView !== AppView.PROFILE ? 'text-purple-300/40' : ''}`}>{navT.profile}</span>
-            </button>
-          </nav>
-        )} */}
+        {/* Bottom Tab Bar Removed as per user request */}
       </div>
     </div>
   );

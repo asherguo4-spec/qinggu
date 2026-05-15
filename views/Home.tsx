@@ -459,38 +459,42 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
                   <span className={`text-[10px] font-black tracking-[0.2em] uppercase ${theme === 'dark' ? 'text-purple-300' : 'text-purple-600'}`}>{t.tag}</span>
                 </div>
                 <div className="mb-2 text-center">
-                  <span className="bg-gradient-to-r from-purple-600 to-white bg-clip-text text-transparent text-5xl md:text-7xl font-black tracking-[0.2em]">
-                    倾谷
+                  <span className={`text-transparent bg-clip-text text-5xl md:text-7xl font-black tracking-[0.2em] uppercase italic drop-shadow-sm ${theme === 'dark' ? 'bg-gradient-to-r from-white to-gray-500' : 'bg-gradient-to-r from-gray-900 to-gray-500'}`}>
+                    {lang === 'zh' ? '倾谷' : 'Selindell'}
                   </span>
                 </div>
-                <h1 className={`text-3xl md:text-5xl font-black mb-3 tracking-tight leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  selindell <span className="text-purple-600">{t.title}</span>
+                <h1 className={`text-2xl md:text-4xl font-black mb-3 tracking-tight leading-tight flex items-center justify-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                  Selindell <span className="ml-2 px-3 py-1 rounded-full text-sm bg-gradient-to-r from-[#FF4A26] to-[#FF8A00] text-white shadow-lg shadow-[#FF4A26]/20">造物舱</span>
                 </h1>
               </div>
 
               {/* Hero Section */}
-              <div className={`mt-0 mb-8 w-full h-40 md:h-56 rounded-[32px] overflow-hidden shadow-xl border ${theme === 'dark' ? 'border-purple-900/30' : 'border-slate-100'}`}>
+              <div className={`mt-0 mb-8 w-full h-40 md:h-56 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.12)] border relative ${theme === 'dark' ? 'border-[#333]' : 'border-gray-200'}`}>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 flex flex-col justify-end p-6">
+                  <span className="text-[#FFE8A1] text-[10px] font-black tracking-widest uppercase mb-1">Selindell 万物造物协议</span>
+                  <h2 className="text-white text-xl font-bold tracking-tight">从灵感穿透供应链</h2>
+                </div>
                 <img 
                   src="https://haibao-iota.vercel.app/hero.png" 
-                  className="w-full h-full object-cover object-bottom" 
+                  className="w-full h-full object-cover object-center" 
                   alt="Hero"
                   referrerPolicy="no-referrer"
                 />
               </div>
 
-              <div className="relative mb-6" ref={inputSectionRef}>
-                 <div className="flex items-center justify-between mb-3 px-1">
-                    <div className={`flex items-center space-x-2 ${theme === 'dark' ? 'text-purple-300/60' : 'text-slate-600'}`}>
-                      <Info size={11} />
-                      <span className="text-[9px] font-bold uppercase tracking-widest italic">{t.exampleHint}</span>
+              <div className="relative mb-8" ref={inputSectionRef}>
+                 <div className="flex items-center justify-between mb-3 px-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-1.5 h-4 bg-[#FF4A26] rounded-full"></div>
+                      <span className={`text-[13px] font-black tracking-widest ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{lang === 'zh' ? '设计要求 / 灵感描述' : t.exampleHint}</span>
                     </div>
                  </div>
 
-                 <div className={`rounded-[32px] p-6 md:p-8 relative border shadow-sm transition-colors duration-500 ${theme === 'dark' ? 'bg-purple-900/30 border-purple-700/30' : 'bg-[#E2E8F0] border-slate-300/50'}`}>
+                 <div className={`rounded-3xl p-6 md:p-8 relative border shadow-sm transition-all duration-500 focus-within:ring-2 focus-within:ring-[#FF4A26]/50 ${theme === 'dark' ? 'bg-[#1C1C1E] border-[#333]' : 'bg-white border-gray-200'}`}>
                     <div className="flex mb-14">
                       <textarea
-                        className={`flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-lg md:text-xl font-bold h-24 md:h-32 resize-none leading-relaxed no-scrollbar ${theme === 'dark' ? 'text-white placeholder:text-purple-400/50' : 'text-gray-900 placeholder:text-slate-500'}`}
-                        placeholder={t.placeholder}
+                        className={`flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-base md:text-lg font-medium h-24 md:h-32 resize-none leading-relaxed no-scrollbar ${theme === 'dark' ? 'text-white placeholder:text-gray-600' : 'text-gray-900 placeholder:text-gray-400'}`}
+                        placeholder={lang === 'zh' ? '输入您的设计想法，例如："赛博朋克风格的机甲少女" 或 "中国风神兽模型"' : t.placeholder}
                         value={prompt}
                         maxLength={500}
                         onChange={(e) => setPrompt(e.target.value)}
@@ -516,8 +520,8 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
                                 <div className="w-7 h-7 rounded-full overflow-hidden mr-2 border border-purple-500/30">
                                   <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
                                 </div>
-                                <span className={`text-xs font-black ${theme === 'dark' ? 'text-purple-300' : 'text-purple-600'}`}>
-                                  {lang === 'zh' ? '已添加' : lang === 'ja' ? '追加済み' : 'Added'}
+                                <span className={`text-xs font-black ${theme === 'dark' ? 'text-[#FF4A26]' : 'text-[#FF4A26]'}`}>
+                                  {lang === 'zh' ? '已添加参考图' : lang === 'ja' ? '追加済み' : 'Added'}
                                 </span>
                               </button>
                               <button 
@@ -530,47 +534,50 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
                           ) : (
                             <button 
                               onClick={() => fileInputRef.current?.click()}
-                              className={`flex items-center justify-center px-5 py-2.5 rounded-full border border-dashed transition-all duration-300 ${theme === 'dark' ? 'border-purple-500/30 text-purple-300/40 hover:border-purple-500/60 hover:text-purple-300/80 bg-transparent' : 'border-slate-400/50 text-slate-400 hover:border-purple-400 hover:text-purple-500 bg-transparent'}`}
+                              className={`flex items-center justify-center px-4 py-2 rounded-full border transition-all duration-300 ${theme === 'dark' ? 'border-gray-700 bg-gray-800/50 text-gray-400 hover:text-white' : 'border-gray-200 bg-gray-50 text-gray-500 hover:text-gray-800'}`}
                             >
-                              <span className="text-xs font-black">{lang === 'zh' ? '+ 灵感图' : lang === 'ja' ? '+ 画像' : '+ Image'}</span>
+                              <span className="text-[11px] font-black">{lang === 'zh' ? '+ 添加参考图' : lang === 'ja' ? '+ 画像' : '+ Image'}</span>
                             </button>
                           )}
                         </div>
                         <div className="hidden sm:flex flex-wrap gap-2 items-center">
                           {(t.samples || []).map((sample: string, i: number) => (
-                            <button key={i} onClick={() => setPrompt(sample)} className={`whitespace-nowrap px-3 py-1.5 rounded-xl text-[9px] border transition-colors ${theme === 'dark' ? 'bg-purple-800/40 text-purple-200 border-purple-700/50' : 'bg-white/80 text-slate-600 border-slate-200'}`}>
+                            <button key={i} onClick={() => setPrompt(sample)} className={`whitespace-nowrap px-3 py-1.5 rounded-full text-[10px] border transition-colors ${theme === 'dark' ? 'bg-gray-800/80 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-600 border-transparent hover:bg-gray-200'}`}>
                               {sample}
                             </button>
                           ))}
                         </div>
                       </div>
                       <div className="flex flex-col items-end space-y-2 ml-auto">
-                        <span className="text-[8px] font-black text-purple-700/60 uppercase tracking-[0.2em] mr-1">{t.expandHint}</span>
+                        <span className={`text-[9px] font-bold ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'} uppercase tracking-widest mr-1`}>{lang === 'zh' ? '让AI丰富细节' : t.expandHint}</span>
                         <button
                           onClick={handleExpandPrompt}
                           disabled={!prompt.trim() || isExpanding}
-                          className="flex items-center space-x-2 px-6 py-2.5 rounded-full bg-purple-600 text-white active:scale-95 disabled:opacity-30 border border-purple-500 shadow-xl shadow-purple-500/20"
+                          className={`flex items-center space-x-1 px-4 py-2 rounded-full text-[11px] font-black active:scale-95 disabled:opacity-30 transition-all ${theme === 'dark' ? 'bg-[#2A2A2A] text-white border border-[#333]' : 'bg-[#E5E5EA] text-[#1C1C1E] hover:bg-[#D1D1D6]'}`}
                         >
-                          {isExpanding ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
-                          <span className="text-xs font-black">{isExpanding ? t.expanding : t.expandBtn}</span>
+                          {isExpanding ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                          <span>{isExpanding ? t.expanding : (lang === 'zh' ? '灵感增强' : t.expandBtn)}</span>
                         </button>
                       </div>
                     </div>
                  </div>
               </div>
 
-              <div className="mb-8">
-                <h3 className={`text-[10px] font-black uppercase tracking-widest mb-3 px-1 italic ${theme === 'dark' ? 'text-purple-400/60' : 'text-slate-400'}`}>{t.styleTitle}</h3>
-                <div className="grid grid-cols-5 gap-2 px-1 pb-2">
+              <div className="mb-10">
+                <div className="flex items-center justify-between mb-4 px-1">
+                  <h3 className={`text-[13px] font-black tracking-widest uppercase ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{lang === 'zh' ? '工艺规格与比例' : t.styleTitle}</h3>
+                  <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>选择预设模型比例</span>
+                </div>
+                <div className="grid grid-cols-5 gap-3 px-1 md:gap-4">
                   {CREATION_STYLES.map((style) => {
                     const isSelected = selectedStyleId === style.id;
                     return (
-                      <button key={style.id} onClick={() => setSelectedStyleId(style.id)} className={`group relative flex flex-col items-center transition-all duration-500 ${isSelected ? 'scale-105' : 'hover:scale-105'}`}>
-                        <div className={`w-full aspect-square rounded-2xl overflow-hidden mb-1.5 border-2 transition-all duration-500 relative ${isSelected ? 'border-purple-500 shadow-sm' : theme === 'dark' ? 'border-purple-900/50 bg-purple-900/20 opacity-60' : 'border-white bg-slate-50 opacity-60'}`}>
-                          <img src={style.imageUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                          {isSelected && <div className="absolute inset-0 bg-purple-500/10 flex items-center justify-center"><Check size={14} className="text-white drop-shadow-lg" /></div>}
+                      <button key={style.id} onClick={() => setSelectedStyleId(style.id)} className={`group relative flex flex-col items-center transition-all duration-300 ${isSelected ? '' : 'hover:scale-105'}`}>
+                        <div className={`w-full aspect-square rounded-[18px] overflow-hidden mb-2 border-2 transition-all duration-300 relative ${isSelected ? 'border-[#FF4A26] shadow-sm scale-110' : theme === 'dark' ? 'border-[#333] bg-[#1C1C1E]' : 'border-gray-100 bg-gray-50'}`}>
+                          <img src={style.imageUrl} className={`w-full h-full object-cover transition-opacity ${isSelected ? 'opacity-100' : 'opacity-60'}`} referrerPolicy="no-referrer" />
+                          {isSelected && <div className="absolute inset-0 bg-[#FF4A26]/10 flex items-center justify-center"><Check size={18} strokeWidth={3} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" /></div>}
                         </div>
-                        <p className={`text-[9px] font-black text-center tracking-tighter transition-all duration-300 ${isSelected ? 'text-purple-500' : theme === 'dark' ? 'text-purple-400/40' : 'text-slate-400'}`}>
+                        <p className={`text-[10px] font-black text-center tracking-tighter transition-all duration-300 ${isSelected ? 'text-[#FF4A26]' : theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
                           {(t.styles as any)?.[style.id] || style.id.toUpperCase()}
                         </p>
                       </button>
@@ -582,20 +589,18 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
               <button
                 onClick={handleGenerateClick}
                 disabled={(!prompt.trim() && !referenceImage) || isGenerating}
-                className={`w-full h-20 rounded-[32px] flex flex-col items-center justify-center space-y-0.5 font-black text-lg md:text-xl transition-all shadow-2xl relative overflow-hidden group mb-16 ${
+                className={`w-full h-16 rounded-[20px] flex items-center justify-center font-black text-lg transition-all relative overflow-hidden group mb-16 ${
                   (prompt.trim() || referenceImage) && !isGenerating 
-                    ? 'purple-gradient text-white active:scale-95 animate-pulsing-glow' 
-                    : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-[#111111] to-[#333333] text-[#FFE8A1] shadow-[0_8px_30px_rgba(0,0,0,0.12)] active:scale-[0.98]' 
+                    : 'bg-[#F2F2F7] dark:bg-[#1C1C1E] text-gray-300 dark:text-gray-700 cursor-not-allowed'
                 }`}
               >
-                <div className="flex items-center space-x-4">
-                  {isGenerating ? <Loader2 className="animate-spin" size={24} /> : <Sparkles size={24} />}
-                  <span className="relative z-10">{isGenerating ? t.generating : t.generateBtn}</span>
+                <div className="flex items-center space-x-3">
+                  {isGenerating ? <Loader2 className="animate-spin text-white" size={20} /> : <Zap size={20} className={(!prompt.trim() && !referenceImage) ? '' : 'text-[#FFE8A1]'} />}
+                  <span className="relative z-10 tracking-wider font-bold text-[17px]">{isGenerating ? (lang === 'zh' ? '正在渲染物理参数...' : t.generating) : (lang === 'zh' ? '生成 3D 实体模型' : t.generateBtn)}</span>
                 </div>
                 {!isGenerating && (prompt.trim() || referenceImage) && (
-                  <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">
-                    {lang === 'zh' ? '点击立即开启 AI 智造' : 'CLICK TO START AI CREATION'}
-                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
                 )}
               </button>
             </>

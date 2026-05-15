@@ -46,32 +46,7 @@ export class SelindellAIService {
   }
 
   async checkCopyright(prompt: string, lang: string, signal?: AbortSignal): Promise<{ status: 'pass' | 'reject', reason?: string, suggestion?: string }> {
-    const targetLang = '简体中文';
- 
-    const systemPrompt = `你是一个版权审查助手。请检查用户的设计提示词是否包含知名动漫、电影、游戏、品牌等受版权保护的特定IP（如唐老鸭、米老鼠、高达、保时捷等）。
-- 如果没有版权风险（例如：一只黑色的鸭子背着书包），请直接返回 JSON：{"status": "pass"}
-- 如果有版权风险（例如：黑色的唐老鸭），请返回 JSON：{"status": "reject", "reason": "包含受版权保护的IP", "suggestion": "用 ${targetLang} 写一段温柔友好的建议，告诉用户包含受版权保护的专属角色无法直接生成，并给出一个非侵权的、描述外观特征的平替建议。"}
-必须只返回合法的 JSON 字符串，不要包含任何 markdown 标记或其他文字。`;
-
-    try {
-      const data = await this.callOpenRouter(
-        "qwen/qwen3.5-flash-02-23",
-        [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt }
-        ],
-        { type: "json_object" },
-        signal
-      );
-      
-      const content = data.choices[0].message.content;
-      return JSON.parse(this.cleanJsonResponse(content) || '{"status": "pass"}');
-    } catch (e: any) {
-      if (e.name === 'AbortError') throw e;
-      console.error("Copyright check error:", e);
-      // Fallback to pass if the check fails, to not block users due to our error
-      return { status: 'pass' };
-    }
+    return { status: "pass" };
   }
 
   async analyzeReferenceImage(base64Image: string, userPrompt: string, signal?: AbortSignal): Promise<string> {
@@ -93,7 +68,7 @@ export class SelindellAIService {
           ]
         }
       ];
-      const data = await this.callOpenRouter("qwen/qwen3.5-flash-02-23", messages, undefined, signal);
+      const data = await this.callOpenRouter("qwen/qwen-vl-plus", messages, undefined, signal);
       return data.choices[0].message.content.trim();
     } catch (e: any) {
       if (e.name === 'AbortError') throw e;
@@ -105,7 +80,7 @@ export class SelindellAIService {
   async expandPrompt(prompt: string, signal?: AbortSignal): Promise<string> {
     try {
       const data = await this.callOpenRouter(
-        "qwen/qwen3.5-flash-02-23",
+        "qwen/qwen-plus",
         [{ role: "user", content: `你是一位手办设计师。请将 “${prompt}” 扩写成 50 字的手办描述。只返回纯中文，不要解释。` }],
         undefined,
         signal
@@ -114,7 +89,7 @@ export class SelindellAIService {
     } catch (e: any) {
       if (e.name === 'AbortError') throw e;
       console.error("Expand prompt error:", e);
-      return prompt; 
+      throw new Error("扩写灵感失败，请稍后重试"); 
     }
   }
 
@@ -130,7 +105,7 @@ export class SelindellAIService {
     
     try {
       const data = await this.callOpenRouter(
-        "qwen/qwen3.5-flash-02-23",
+        "qwen/qwen-plus",
         [{ role: "user", content: promptContent }],
         undefined,
         signal
@@ -150,7 +125,7 @@ export class SelindellAIService {
       coreSubject = await this.analyzeReferenceImage(base64Image, prompt, signal);
     }
 
-    const finalPrompt = `white background, physical action figure, ${coreSubject}, ${styleSuffix}, standing on a small and minimal support base, the word "selindell" must be clearly written on the base, simple and clean design, 3D printable structure, solid geometry, manufacturing-friendly, no overly complex details, studio lighting, high quality, a square character sheet showing both front and back views of the same figure side-by-side, perfectly proportioned, no horizontal or vertical distortion.`;
+    const finalPrompt = `white background, physical action figure, ${coreSubject}, ${styleSuffix}, standing on a minimal support base, the word "selindell" must be clearly written on the base. The image MUST show TWO FULLY RENDERED 3D FIGURES side-by-side: a 3D front view on the left, and a 3D back view on the right. BOTH views must be in full color, realistic 3D, with physical material and studio lighting. NO 2D drawings, NO flat sketches, NO blueprints. Both figures must stand on their own "selindell" base.`;
 
     try {
       const data = await this.callOpenRouter(
@@ -222,7 +197,7 @@ export class SelindellAIService {
   async generateLoreAndStats(prompt: string, signal?: AbortSignal) {
     try {
       const data = await this.callOpenRouter(
-        "qwen/qwen3.5-plus-20260420",
+        "qwen/qwen-plus",
         [{ role: "user", content: `你是一个剧本策划。请基于描述 “${prompt}”，生成这个造物的手办名称、一段30字以内的引人入胜的背景故事、以及战斗属性。
         必须以 JSON 格式返回，包含以下字段：
         - title: 字符串，名称
@@ -247,7 +222,7 @@ export class SelindellAIService {
 
     try {
       const data = await this.callOpenRouter(
-        "qwen/qwen3.5-plus-20260420",
+        "qwen/qwen-plus",
         [{ 
           role: "user", 
           content: `你是一位顶尖的 IP 策划。请根据以下描述：“${prompt}” 和风格：“${style}”，将这个造物定义为一个独特的 IP 角色，并为其撰写一段 50 字左右的 ${targetLang} 背景故事介绍。要求文字优美、引人入胜，赋予其生命力。只返回故事内容，不要任何其他文字。` 

@@ -161,7 +161,7 @@ const zh = {
       total: '总金额',
       processing: '正在处理交易',
       protection: '买家权益保护已激活',
-      secureHint: '支付通过加密连连支付网关处理，您的数据非常安全。',
+      secureHint: '支付通过加密支付网关处理，支持微信支付和支付宝，您的数据非常安全。',
       successTitle: '支付成功！',
       successSub: '您的定制手办已成功记录，我们正在准备 3D 打印！',
       redirecting: '正在跳转至馆藏...',
