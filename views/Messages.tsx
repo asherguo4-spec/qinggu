@@ -148,7 +148,7 @@ const Messages: React.FC<MessagesProps> = ({ lang, theme, userId, onRead }) => {
             
             <div className="flex items-center mb-10">
               <div className={`w-12 h-12 rounded-full overflow-hidden mr-4 border-2 ${theme === 'dark' ? 'border-purple-800' : 'border-purple-100'}`}>
-                <img src="https://selindelllogo.vercel.app/selin.png" alt="selindell" className="w-full h-full object-cover" />
+                <img src="/selin.png" alt="selindell" className="w-full h-full object-cover" />
               </div>
               <div>
                 <div className={`text-base font-bold ${theme === 'dark' ? 'text-purple-200' : 'text-slate-800'}`}>
@@ -215,7 +215,7 @@ const Messages: React.FC<MessagesProps> = ({ lang, theme, userId, onRead }) => {
               {/* Sender Header */}
               <div className="flex items-center mb-3">
                 <div className={`w-8 h-8 rounded-full overflow-hidden mr-3 border ${theme === 'dark' ? 'border-purple-800' : 'border-purple-100'}`}>
-                  <img src="https://selindelllogo.vercel.app/selin.png" alt="selindell" className="w-full h-full object-cover" />
+                  <img src="/selin.png" alt="selindell" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <div className={`text-xs font-bold ${theme === 'dark' ? 'text-purple-200' : 'text-slate-800'}`}>

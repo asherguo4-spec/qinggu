@@ -475,7 +475,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
                   <h2 className="text-white text-xl font-bold tracking-tight">从灵感穿透供应链</h2>
                 </div>
                 <img 
-                  src="https://haibao-iota.vercel.app/hero.png" 
+                  src="/hero.png" 
                   className="w-full h-full object-cover object-center" 
                   alt="Hero"
                   referrerPolicy="no-referrer"
