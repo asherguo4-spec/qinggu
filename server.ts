@@ -21,28 +21,27 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-app.post("/api/upload", async (req, res) => {
+// 1. Image upload via direct Cloudinary signed upload
+app.post("/api/cloudinary-signature", (req, res) => {
   try {
-    const { image } = req.body; // Base64 string
-    if (!image) {
-      return res.status(400).json({ error: "Missing image data" });
+    if (!process.env.CLOUDINARY_API_SECRET) {
+      return res.status(500).json({ error: "Cloudinary is not configured" });
     }
 
-    if (!process.env.CLOUDINARY_CLOUD_NAME) {
-      return res.status(500).json({ 
-        error: "Cloudinary 尚未配置！请在设置 (Settings) -> API Keys & Environment 中配置 CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, 和 CLOUDINARY_API_SECRET。" 
-      });
-    }
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const signature = cloudinary.utils.api_sign_request({
+      timestamp,
+      folder: "selindell_creations",
+    }, process.env.CLOUDINARY_API_SECRET);
 
-    // Cloudinary supports direct base64 string upload
-    const uploadRes = await cloudinary.uploader.upload(image, {
-      folder: "selindell_creations", // A specific folder name
+    res.json({
+      timestamp,
+      signature,
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY
     });
-
-    return res.json({ url: uploadRes.secure_url });
   } catch (error: any) {
-    console.error("Cloudinary Upload error:", error);
-    return res.status(500).json({ error: "Failed to upload image to Cloudinary" });
+    res.status(500).json({ error: error.message });
   }
 });
 
