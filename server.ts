@@ -35,31 +35,31 @@ function getAifadianSign(params: string, ts: number) {
 
 app.post("/api/checkout", (req, res) => {
   try {
-    const { email, amount = 129 } = req.body;
+    const { email, amount = 299, orderId } = req.body;
     if (!email) {
       return res.status(400).json({ error: "Missing email" });
     }
 
-    const orderId = `order_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const finalOrderId = orderId || `order_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     
-    // 记录订单
-    orders[orderId] = { email, amount, status: "pending" };
+    // 记录订单 (Local variable fallback, better to rely on Firebase/Webhook)
+    orders[finalOrderId] = { email, amount, status: "pending" };
 
     if (!AIFADIAN_USER_ID) {
       return res.status(500).json({ error: "Aifadian not configured" });
     }
 
     // 爱发电下单页链接
-    const payUrl = `https://afdian.net/order/create?user_id=${AIFADIAN_USER_ID}&custom_order_id=${orderId}&remark=${encodeURIComponent(email)}&custom_price=${amount}`;
+    const payUrl = `https://afdian.net/order/create?user_id=${AIFADIAN_USER_ID}&custom_order_id=${finalOrderId}&remark=${encodeURIComponent(email)}&custom_price=${amount}`;
 
-    res.json({ payUrl, orderId });
+    res.json({ payUrl, orderId: finalOrderId });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // 接收爱发电的 Webhook 通知
-app.post("/api/webhook/aifadian", (req, res) => {
+app.post("/api/webhook/aifadian", async (req, res) => {
   console.log("Received Aifadian Webhook:", req.body);
   const { data } = req.body || {};
   
@@ -67,8 +67,9 @@ app.post("/api/webhook/aifadian", (req, res) => {
     const orderId = data.order.out_trade_no;
     if (orders[orderId]) {
       orders[orderId].status = "paid";
-      console.log(`Order ${orderId} marked as PAID via Webhook`);
     }
+    console.log(`Order ${orderId} marked as PAID via Webhook`);
+    // Optional: Firebase update if we run locally
   }
   
   // 必须返回 {"ec":200}

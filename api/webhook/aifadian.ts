@@ -1,8 +1,19 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, updateDoc } from 'firebase/firestore';
 
-// 注意：由于 Serverless 是无状态的，实际生产环境中这里应该连接数据库来更新订单状态，
-// 这里暂时使用打印日志，表示 Webhook 工作正常。
-export default function handler(req: VercelRequest, res: VercelResponse) {
+// 动态导入配置以避免绝对路径问题或先尝试从环境变量获取
+let app: any;
+let db: any;
+try {
+  const firebaseConfig = require('../../firebase-applet-config.json');
+  app = initializeApp(firebaseConfig);
+  db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+} catch (e) {
+  console.log("Failed to init firebase in webhook", e);
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ec: 405, em: "Method Not Allowed" });
   }
@@ -14,7 +25,15 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     if (data && data.type === "order" && data.order) {
       const orderId = data.order.out_trade_no;
       console.log(`Order ${orderId} marked as PAID via Webhook`);
-      // TODO: 更新数据库中该订单的支付状态
+      
+      if (db) {
+        try {
+          await updateDoc(doc(db, 'orders', orderId), { status: 'paid', updated_at: new Date().toISOString() });
+          console.log(`Updated Firebase order ${orderId} to paid`);
+        } catch (dbErr) {
+          console.error("Failed to update Firebase order:", dbErr);
+        }
+      }
     }
     
     // 必须返回 {"ec":200}

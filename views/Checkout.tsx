@@ -646,9 +646,20 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                       setOrderId(docRef.id);
                       setGuestEmailForOrder(userEmail);
 
-                      // 3. 显示模拟支付弹窗
-                      setIsProcessing(false);
-                      setShowPaymentModal(true);
+                      // 3. 调用真实支付接口
+                      const response = await fetch("/api/checkout", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: userEmail, amount: 299, orderId: docRef.id }),
+                      });
+                      
+                      const result = await response.json();
+                      if (!response.ok) {
+                        throw new Error(result.error || "Failed to create payment url");
+                      }
+                      
+                      // 跳转到爱发电支付页面
+                      window.location.href = result.payUrl;
 
                     } catch (error: any) {
                       console.error("下单错误:", error);
