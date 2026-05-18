@@ -21,7 +21,6 @@ import { Globe, ChevronDown, Home as HomeIcon, Compass, ShoppingBag, User as Use
 
 
 import CustomerServiceFloat from './components/CustomerServiceFloat';
-import WechatOverlay from './components/WechatOverlay';
 
 const App: React.FC = () => {
   // 1. 所有的 Hook 必须放在组件的最顶部，绝对不能放在任何 if 之后
@@ -567,7 +566,6 @@ const App: React.FC = () => {
         {/* Bottom Tab Bar Removed as per user request */}
       </div>
       <CustomerServiceFloat theme={theme} />
-      <WechatOverlay />
     </div>
   );
 };
