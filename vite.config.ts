@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       sourcemap: false,
       target: 'es2015',
+      chunkSizeWarningLimit: 2000,
     }
   }
 })
