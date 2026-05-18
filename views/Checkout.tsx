@@ -649,7 +649,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                             return await uploadImage(img, 'creations');
                           } catch (e: any) {
                             console.error("Image upload failed for one image:", e);
-                            throw new Error("图片上传失败。请检查 Cloudinary 配置是否正确，详细错误请查看控制台。");
+                            throw new Error("图片上传失败。Please check the network and try again.");
                           }
                         })
                       );

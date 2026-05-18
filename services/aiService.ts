@@ -189,7 +189,9 @@ export class SelindellAIService {
 
       return images;
     } catch (error: any) {
-      console.error("Image generation error:", error);
+      if (error.name !== 'AbortError' && !(error.message && error.message.toLowerCase().includes('abort'))) {
+        console.error("Image generation error:", error);
+      }
       throw new Error(error.message || "造物引擎暂时无法响应");
     }
   }

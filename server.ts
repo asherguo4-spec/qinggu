@@ -22,26 +22,25 @@ cloudinary.config({
 });
 
 // 1. Image upload via direct Cloudinary signed upload
-app.post("/api/cloudinary-signature", (req, res) => {
+app.post("/api/upload", async (req, res) => {
   try {
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ error: "Missing image data" });
+    }
+
     if (!process.env.CLOUDINARY_API_SECRET) {
       return res.status(500).json({ error: "Cloudinary is not configured" });
     }
 
-    const timestamp = Math.round(new Date().getTime() / 1000);
-    const signature = cloudinary.utils.api_sign_request({
-      timestamp,
+    const uploadRes = await cloudinary.uploader.upload(image, {
       folder: "selindell_creations",
-    }, process.env.CLOUDINARY_API_SECRET);
-
-    res.json({
-      timestamp,
-      signature,
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY
     });
+
+    return res.json({ url: uploadRes.secure_url });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error("Cloudinary upload proxy error:", error);
+    res.status(500).json({ error: error.message || "Failed to upload to Cloudinary" });
   }
 });
 

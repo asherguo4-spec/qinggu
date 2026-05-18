@@ -313,7 +313,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
       onCreationSuccess(newCreation);
       setView(AppView.RESULT);
     } catch (error: any) {
-      if (error.name === 'AbortError') {
+      if (error.name === 'AbortError' || (error.message && error.message.toLowerCase().includes('abort'))) {
         console.log("Generation cancelled by user");
         return;
       }
