@@ -9,8 +9,8 @@ const app = express();
 // const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 // const supabase = createClient(supabaseUrl, supabaseKey);
 
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.static("public"));
 
 // Ensure uploads folder exists

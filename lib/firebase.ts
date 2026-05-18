@@ -48,6 +48,9 @@ export const uploadImage = async (imageData: string, bucketName: string = 'creat
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: imageData }),
       });
+      if (!res.ok) {
+        throw new Error(`Upload failed with status ${res.status} ${await res.text()}`);
+      }
       const data = await res.json();
       if (data.url) return data.url;
     } catch (e) {

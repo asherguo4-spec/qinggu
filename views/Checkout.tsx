@@ -675,10 +675,8 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                         throw new Error(result.error || "Failed to create payment url");
                       }
                       
-                      // 弹出支付 Modal，展示真实支付链接
-                      setPayUrl(result.payUrl);
-                      setIsProcessing(false);
-                      setShowPaymentModal(true);
+                      // 直接跳转至爱发电付款界面
+                      window.location.href = result.payUrl;
 
                     } catch (error: any) {
                       console.error("下单错误:", error);
