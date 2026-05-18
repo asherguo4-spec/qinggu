@@ -2,14 +2,56 @@ import express from "express";
 import axios from "axios";
 import path from "path";
 import crypto from "crypto";
+import fs from "fs";
 
 const app = express();
 // const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 // const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 // const supabase = createClient(supabaseUrl, supabaseKey);
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(express.static("public"));
+
+// Ensure uploads folder exists
+const uploadsDir = path.join(process.cwd(), "public", "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+app.post("/api/upload", (req, res) => {
+  try {
+    const { image } = req.body; // Base64 string
+    if (!image) {
+      return res.status(400).json({ error: "Missing image data" });
+    }
+
+    // Extract base64 data
+    const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({ error: "Invalid base64 format" });
+    }
+
+    const type = matches[1];
+    const data = Buffer.from(matches[2], "base64");
+    
+    // Determine extension
+    let ext = "jpeg";
+    if (type.includes("png")) ext = "png";
+    if (type.includes("webp")) ext = "webp";
+
+    const fileName = `img_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+    const filePath = path.join(uploadsDir, fileName);
+
+    fs.writeFileSync(filePath, data);
+
+    const fileUrl = `/uploads/${fileName}`;
+    return res.json({ url: fileUrl });
+  } catch (error: any) {
+    console.error("Upload error:", error);
+    return res.status(500).json({ error: "Failed to upload image" });
+  }
+});
 
 // 2. 跨域放行
 app.use((req, res, next) => {

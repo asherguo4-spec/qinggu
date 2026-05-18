@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, MapPin, CheckCircle2, ShieldCheck, Mail, Globe, Lock, Loader2, Sparkles } from 'lucide-react';
 import { GeneratedCreation, Address, AppView } from '../types';
 import { uploadImage, db } from '../lib/firebase';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { auth } from '../lib/firebase';
 import { aiService } from '../services/aiService';
 import { translations, LanguageCode } from '../translations';
@@ -60,7 +60,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'wechat' | 'alipay'>('wechat');
+  const [payUrl, setPayUrl] = useState<string>('');
   const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
   const [guestEmailForOrder, setGuestEmailForOrder] = useState<string>('');
   const [isFormValid, setIsFormValid] = useState(false);
@@ -68,6 +68,23 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   const [isFavorited, setIsFavorited] = useState(false);
   const [isFavoriting, setIsFavoriting] = useState(false);
   const [showSaveToast, setShowSaveToast] = useState(false);
+
+  useEffect(() => {
+    if (!orderId || !showPaymentModal) return;
+    
+    // 监听订单状态
+    const unsubscribe = onSnapshot(doc(db, 'orders', orderId), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().status === 'paid') {
+        setShowPaymentModal(false);
+        setIsSuccess(true);
+        setTimeout(() => {
+          onPaymentComplete(creation.id, guestEmailForOrder);
+        }, 3000);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [orderId, showPaymentModal]);
 
   useEffect(() => {
     if (userId && creation) {
@@ -658,8 +675,10 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                         throw new Error(result.error || "Failed to create payment url");
                       }
                       
-                      // 跳转到爱发电支付页面
-                      window.location.href = result.payUrl;
+                      // 弹出支付 Modal，展示真实支付链接
+                      setPayUrl(result.payUrl);
+                      setIsProcessing(false);
+                      setShowPaymentModal(true);
 
                     } catch (error: any) {
                       console.error("下单错误:", error);
@@ -729,84 +748,30 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
 
         {/* 支付方式弹窗 (Payment Modal) */}
         {showPaymentModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSimulatingPayment && setShowPaymentModal(false)}></div>
-            <div className={`relative w-full max-w-sm rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200 ${theme === 'dark' ? 'bg-[#1a0b2e] border-purple-800' : 'bg-white border-gray-100'} border`}>
-              <h3 className={`text-2xl font-black mb-6 text-center ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                收银台
-              </h3>
-              
-              <div className="space-y-4 mb-8">
-                <button 
-                  onClick={() => setPaymentMethod('wechat')}
-                  className={`w-full flex items-center space-x-4 p-4 rounded-2xl border-2 transition-all ${
-                    paymentMethod === 'wechat' 
-                      ? (theme === 'dark' ? 'border-[#07C160] bg-[#07C160]/10' : 'border-[#07C160] bg-[#07C160]/5') 
-                      : (theme === 'dark' ? 'border-purple-800/30 hover:border-purple-600/50' : 'border-gray-100 hover:border-gray-300')
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#07C160] flex items-center justify-center">
-                    <Sparkles className="text-white" size={20} />
-                  </div>
-                  <span className={`font-black text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>微信支付</span>
-                </button>
-
-                <button 
-                  onClick={() => setPaymentMethod('alipay')}
-                  className={`w-full flex items-center space-x-4 p-4 rounded-2xl border-2 transition-all ${
-                    paymentMethod === 'alipay' 
-                      ? (theme === 'dark' ? 'border-[#1677FF] bg-[#1677FF]/10' : 'border-[#1677FF] bg-[#1677FF]/5') 
-                      : (theme === 'dark' ? 'border-purple-800/30 hover:border-purple-600/50' : 'border-gray-100 hover:border-gray-300')
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#1677FF] flex items-center justify-center">
-                    <CheckCircle2 className="text-white" size={20} />
-                  </div>
-                  <span className={`font-black text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>支付宝支付</span>
-                </button>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)}></div>
+            <div className={`relative w-full max-w-4xl h-[80vh] flex flex-col rounded-[32px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 ${theme === 'dark' ? 'bg-[#1a0b2e] border border-purple-800' : 'bg-white border border-gray-100'}`}>
+              <div className="flex justify-between items-center p-4 border-b border-gray-200/20">
+                <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  收银台 (爱发电)
+                </h3>
+                <div className="flex space-x-4 items-center">
+                  <a 
+                    href={payUrl} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
+                  >
+                    在微信中无法支付？点此新窗口打开
+                  </a>
+                  <button onClick={() => setShowPaymentModal(false)} className={`p-2 rounded-full ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'} transition-colors`}>
+                    取消
+                  </button>
+                </div>
               </div>
-
-              <button
-                onClick={async () => {
-                  if (!orderId) return;
-                  setIsSimulatingPayment(true);
-                  try {
-                    // Simulate processing
-                    await new Promise(r => setTimeout(r, 1500));
-                    await updateDoc(doc(db, 'orders', orderId), { status: 'paid' });
-                    setShowPaymentModal(false);
-                    setIsSuccess(true);
-                    setTimeout(() => {
-                      onPaymentComplete(creation.id, guestEmailForOrder);
-                    }, 3000);
-                  } catch (e) {
-                    console.error('Payment simulation error:', e);
-                  } finally {
-                    setIsSimulatingPayment(false);
-                  }
-                }}
-                disabled={isSimulatingPayment}
-                className={`w-full py-4 rounded-full font-black text-lg transition-all flex items-center justify-center space-x-2 ${
-                  isSimulatingPayment ? 'opacity-50 cursor-not-allowed ' : ''
-                }${
-                  paymentMethod === 'wechat' ? 'bg-[#07C160] hover:bg-[#06ad56] text-white shadow-[#07C160]/50' : 'bg-[#1677FF] hover:bg-[#156ce5] text-white shadow-[#1677FF]/50'
-                } shadow-lg`}
-              >
-                {isSimulatingPayment ? (
-                  <Loader2 size={24} className="animate-spin" />
-                ) : (
-                  <span>确认支付 ¥299</span>
-                )}
-              </button>
-              
-              {!isSimulatingPayment && (
-                <button 
-                  onClick={() => setShowPaymentModal(false)}
-                  className={`w-full mt-4 py-3 rounded-full font-bold text-sm ${theme === 'dark' ? 'text-gray-400 hover:text-white bg-white/5' : 'text-gray-500 hover:text-gray-900 bg-black/5'}`}
-                >
-                  取消
-                </button>
-              )}
+              <div className="flex-1 w-full relative bg-white">
+                <iframe src={payUrl} className="w-full h-full border-0 absolute inset-0" title="爱发电支付" />
+              </div>
             </div>
           </div>
         )}

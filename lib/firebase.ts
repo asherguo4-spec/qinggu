@@ -39,8 +39,20 @@ export const logAction = async (userId: string, action: string, details?: any) =
 };
 
 export const uploadImage = async (imageData: string, bucketName: string = 'creations'): Promise<string> => {
-  // AI Studio Firebase tools only provision Auth and Firestore.
-  // Firebase Storage is NOT provisioned by default, which causes "Max retry time" timeouts.
-  // We simply return the image data (HTTP URL or Base64) to be stored in Firestore directly.
+  // Use our local Node.js endpoint to save base64 locally to avoid Firestore 1MB document limits.
+  // Images are written to public/uploads folder.
+  if (imageData.startsWith("data:image")) {
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageData }),
+      });
+      const data = await res.json();
+      if (data.url) return data.url;
+    } catch (e) {
+      console.error("Local upload failed", e);
+    }
+  }
   return imageData;
 };
