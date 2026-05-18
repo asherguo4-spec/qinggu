@@ -33,12 +33,23 @@ const App: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<GeneratedCreation | null>(null);
   const [orderCount, setOrderCount] = useState(0);
   const [lang, setLang] = useState<LanguageCode>('zh');
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const hour = new Date().getHours();
+    return (hour >= 7 && hour < 18) ? 'light' : 'dark';
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
   const firstMenuItemRef = useRef<HTMLButtonElement>(null);
   const [activePolicy, setActivePolicy] = useState<string | null>(null);
   const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const hour = new Date().getHours();
+      setTheme((hour >= 7 && hour < 18) ? 'light' : 'dark');
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const trackEvent = (eventName: string, params?: any) => {
     console.log(`[Track] ${eventName}`, params);
@@ -100,11 +111,17 @@ const App: React.FC = () => {
     return id.substring(0, 8).toUpperCase();
   };
 
+  const getRandomAvatar = (seed?: string) => {
+    const s = seed || Math.random().toString(36).substring(7);
+    // Using a friendly avatar style that fits the 'forge' / 'creator' theme
+    return `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${s}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+  };
+
   const getDefaultProfile = (id: string | null): UserProfile => ({
     id: id || '',
     shortId: generateShortId(id || ''),
     nickname: id ? (lang === 'zh' ? '加载中...' : 'Loading...') : (lang === 'zh' ? '欢迎' : 'Welcome'),
-    avatar: `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2E4NTVmNyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkeT0iLjE0ZW0iIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iNDAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5VSTwvdGV4dD48L3N2Zz4=`,
+    avatar: getRandomAvatar(id || undefined),
     email: '',
     bio: id ? (lang === 'zh' ? '正在获取用户信息...' : 'Fetching profile...') : (lang === 'zh' ? '探索您的3d工作台' : 'Explore your 3D workbench'),
     isRegistered: !!id,
@@ -161,7 +178,7 @@ const App: React.FC = () => {
           shortId: generateShortId(uid),
           nickname: profileData.nickname,
           bio: profileData.bio || (lang === 'zh' ? '欢迎回来' : 'Welcome back'),
-          avatar: profileData.avatar || `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2E4NTVmNyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkeT0iLjE0ZW0iIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5VU0VSPC90ZXh0Pjwvc3ZnPg==`,
+          avatar: profileData.avatar || getRandomAvatar(uid),
           email: user.email || '',
           isRegistered: true,
           level: level,

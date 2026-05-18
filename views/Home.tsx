@@ -104,14 +104,14 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
         await setDoc(doc(db, 'works', lastResult.id), {
           id: lastResult.id,
           user_id: userId,
-          title: lastResult.title,
-          image_url: lastResult.imageUrl,
-          image_urls: lastResult.imageUrls,
-          style: lastResult.style,
-          prompt: lastResult.prompt,
-          lore: lastResult.lore,
-          stats: lastResult.stats,
-          story_card: lastResult.storyCard,
+          title: lastResult.title || null,
+          image_url: lastResult.imageUrl || null,
+          image_urls: lastResult.imageUrls || [],
+          style: lastResult.style || null,
+          prompt: lastResult.prompt || null,
+          lore: lastResult.lore || null,
+          stats: lastResult.stats || null,
+          story_card: lastResult.storyCard || null,
           created_at: new Date().toISOString()
         }, { merge: true });
         

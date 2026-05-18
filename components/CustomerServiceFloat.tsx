@@ -15,18 +15,14 @@ const CustomerServiceFloat: React.FC<{ theme?: 'light' | 'dark' }> = ({ theme = 
             </button>
           </div>
           
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className={`w-32 h-32 rounded-xl flex items-center justify-center border-2 border-dashed ${theme === 'dark' ? 'border-purple-500/30' : 'border-purple-200'} bg-white p-2`}>
-              {/* 这里放真实的微信二维码图片 */}
-              <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center rounded-lg">
-                 <QrCode className="text-gray-400 mb-2" size={32} />
-                 <span className="text-[10px] text-gray-400 font-medium">请替换为微信二维码</span>
-              </div>
+          <div className="flex flex-col items-center justify-center space-y-4 py-4">
+            <p className={`text-sm text-center leading-relaxed ${theme === 'dark' ? 'text-purple-200/90' : 'text-gray-700'}`}>
+              添加客服微信号，与我们取得联系：
+            </p>
+            <div className={`px-4 py-3 rounded-2xl font-mono text-xl font-bold select-all flex items-center justify-center ${theme === 'dark' ? 'bg-purple-950/50 text-white border border-purple-700' : 'bg-gray-100 text-purple-900 border border-gray-200'}`}>
+              SelindellSupport
             </div>
-            
             <p className={`text-xs text-center leading-relaxed ${theme === 'dark' ? 'text-purple-200/70' : 'text-gray-500'}`}>
-              微信号：<span className="font-mono font-bold select-all">SelindellSupport</span><br/>
-              请截图保存并在微信中扫码添加<br/>
               在线时间: 09:00 - 22:00
             </p>
           </div>

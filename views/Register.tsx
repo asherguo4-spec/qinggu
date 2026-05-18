@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Sparkles, Mail, Lock, Loader2, ArrowRight, User, LogIn, CheckCircle2, ChevronLeft, AlertCircle } from 'lucide-react';
 import { auth, db } from '../lib/firebase';
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { translations, LanguageCode } from '../translations';
 
 interface RegisterProps {
@@ -105,15 +105,48 @@ const Register: React.FC<RegisterProps> = ({ lang, onRegisterSuccess, onBack, th
           bio: existingBio || (lang === 'zh' ? '欢迎来到造物世界' : 'Welcome to the Forge')
         }, { merge: true });
 
-        // 2. Welcome Notification (ONLY for new users)
-        if (isNewUser) {
-          await addDoc(collection(db, 'notifications'), {
+        // 2. Welcome Notification (Smarter Logic)
+        const notificationsRef = collection(db, 'notifications');
+        const welcomeQuery = query(notificationsRef, where('target_user_id', '==', finalUserId), where('title', 'in', [
+          lang === 'zh' ? '欢迎来到 selindell' : 'Welcome to selindell',
+          '欢迎来到 selindell',
+          'Welcome to selindell'
+        ]));
+        const welcomeSnap = await getDocs(welcomeQuery);
+        
+        if (isNewUser && welcomeSnap.empty) {
+          await addDoc(notificationsRef, {
             target_user_id: finalUserId,
             title: lang === 'zh' ? '欢迎来到 selindell' : 'Welcome to selindell',
             content: lang === 'zh' ? '你好造物主，欢迎来到 selindell！在这里开启你的创作之旅。' : 'Hello Creator, welcome to selindell! Start your creative journey here.',
             is_active: true,
-            is_read: false
+            is_read: false,
+            created_at: new Date().toISOString()
           });
+        } else if (!isNewUser) {
+          // Check if we already sent a "Welcome back" very recently (e.g., in the last 12 hours)
+          const backQuery = query(notificationsRef, 
+            where('target_user_id', '==', finalUserId), 
+            where('title', 'in', [lang === 'zh' ? '欢迎回来' : 'Welcome back', '欢迎回来', 'Welcome back'])
+          );
+          const backSnap = await getDocs(backQuery);
+          const recentBack = backSnap.docs.some(doc => {
+            const data = doc.data();
+            if (!data.created_at) return false;
+            const diff = Date.now() - new Date(data.created_at).getTime();
+            return diff < 12 * 60 * 60 * 1000; // 12 hours
+          });
+
+          if (!recentBack) {
+            await addDoc(notificationsRef, {
+              target_user_id: finalUserId,
+              title: lang === 'zh' ? '欢迎回来' : 'Welcome back',
+              content: lang === 'zh' ? '很高兴再次见到你，造物主！准备好开始新的创作了吗？' : 'Great to see you again, Creator! Ready for something new?',
+              is_active: true,
+              is_read: false,
+              created_at: new Date().toISOString()
+            });
+          }
         }
       }
       
@@ -142,6 +175,8 @@ const Register: React.FC<RegisterProps> = ({ lang, onRegisterSuccess, onBack, th
       const profileSnap = await getDoc(doc(db, 'users', user.uid));
       let isNewUser = false;
       
+      const notificationsRef = collection(db, 'notifications');
+      
       if (!profileSnap.exists()) {
         isNewUser = true;
         // 1. Create User Profile
@@ -152,18 +187,53 @@ const Register: React.FC<RegisterProps> = ({ lang, onRegisterSuccess, onBack, th
           bio: (lang === 'zh' ? '欢迎来到造物世界' : 'Welcome to the Forge')
         });
 
-        // 2. Welcome Notification
-        await addDoc(collection(db, 'notifications'), {
-          target_user_id: user.uid,
-          title: lang === 'zh' ? '欢迎来到 selindell' : 'Welcome to selindell',
-          content: lang === 'zh' ? '你好造物主，欢迎来到 selindell！在这里开启你的创作之旅。' : 'Hello Creator, welcome to selindell! Start your creative journey here.',
-          is_active: true,
-          is_read: false
-        });
+        // 2. Welcome Notification (Check if ever sent)
+        const welcomeQuery = query(notificationsRef, where('target_user_id', '==', user.uid), where('title', 'in', [
+          lang === 'zh' ? '欢迎来到 selindell' : 'Welcome to selindell',
+          '欢迎来到 selindell',
+          'Welcome to selindell'
+        ]));
+        const welcomeSnap = await getDocs(welcomeQuery);
+
+        if (welcomeSnap.empty) {
+          await addDoc(notificationsRef, {
+            target_user_id: user.uid,
+            title: lang === 'zh' ? '欢迎来到 selindell' : 'Welcome to selindell',
+            content: lang === 'zh' ? '你好造物主，欢迎来到 selindell！在这里开启你的创作之旅。' : 'Hello Creator, welcome to selindell! Start your creative journey here.',
+            is_active: true,
+            is_read: false,
+            created_at: new Date().toISOString()
+          });
+        }
         setSuccessMsg(t.successReg);
       } else {
         const data = profileSnap.data() as any;
         finalNickname = data.nickname || finalNickname;
+        
+        // Welcome back notification for Google Login (Returning User - check if recent)
+        const backQuery = query(notificationsRef, 
+          where('target_user_id', '==', user.uid), 
+          where('title', 'in', [lang === 'zh' ? '欢迎回来' : 'Welcome back', '欢迎回来', 'Welcome back'])
+        );
+        const backSnap = await getDocs(backQuery);
+        const recentBack = backSnap.docs.some(doc => {
+          const data = doc.data();
+          if (!data.created_at) return false;
+          const diff = Date.now() - new Date(data.created_at).getTime();
+          return diff < 12 * 60 * 60 * 1000; // 12 hours
+        });
+
+        if (!recentBack) {
+          await addDoc(notificationsRef, {
+            target_user_id: user.uid,
+            title: lang === 'zh' ? '欢迎回来' : 'Welcome back',
+            content: lang === 'zh' ? '很高兴再次见到你，造物主！准备好开始新的创作了吗？' : 'Great to see you again, Creator! Ready for something new?',
+            is_active: true,
+            is_read: false,
+            created_at: new Date().toISOString()
+          });
+        }
+        
         setSuccessMsg(t.successLogin);
       }
       

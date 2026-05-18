@@ -100,12 +100,12 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
             user_id: userId,
             title: creation.title,
             image_url: creation.imageUrl,
-            image_urls: creation.imageUrls,
-            video_url: creation.videoUrl,
+            image_urls: creation.imageUrls || [],
+            video_url: creation.videoUrl || null,
             style: creation.style,
             prompt: creation.prompt,
-            stats: creation.stats,
-            story_card: (creation as any).storyCard,
+            stats: creation.stats || null,
+            story_card: (creation as any).storyCard || null,
             created_at: new Date().toISOString()
           }, { merge: true });
         } catch (workError) {
@@ -175,8 +175,16 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
       setIsProcessing(true);
       const data = formRef.current;
 
+      // Sanitizer helper for Firestore
+      const sanitize = (obj: any) => {
+        const newObj: any = {};
+        Object.keys(obj).forEach(key => {
+          newObj[key] = obj[key] === undefined ? null : obj[key];
+        });
+        return newObj;
+      };
+
       // 1. 将 Base64 图片上传到 Supabase Storage
-      // 如果上传失败，我们至少尝试保留原始 URL 或提示错误
       const imageUrls = await Promise.all(
         creation.imageUrls.map(async (img) => {
           try {
@@ -189,7 +197,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
       );
 
       // 2. 准备订单数据，使用上传后的 URL
-      const orderPayload = {
+      const orderPayload = sanitize({
         user_id: userId,
         guest_email: isGuest ? data.email.trim() : null,
         title: creation.title,
@@ -199,7 +207,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
         status: 'paid',
         is_public: false,
         story_card: creation.storyCard,
-        preview_images: imageUrls, // 这里现在是 URL 数组
+        preview_images: imageUrls, 
         payment_id: details.id,
         shipping_info: isGuest ? {
           email: data.email,
@@ -213,7 +221,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
         } : {
           address_id: data.selectedAddressId
         }
-      };
+      });
 
       const docRef = await addDoc(collection(db, 'orders'), orderPayload);
 
@@ -618,7 +626,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                         amount: 299,
                         status: 'pending',
                         is_public: false,
-                        story_card: creation.storyCard,
+                        story_card: creation.storyCard || null,
                         preview_images: imageUrls,
                         shipping_info: isGuest ? {
                           email: data.email,

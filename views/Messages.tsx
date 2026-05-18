@@ -47,7 +47,13 @@ const Messages: React.FC<MessagesProps> = ({ lang, theme, userId, onRead }) => {
       const snap = await getDocs(query(collection(db, 'notifications'), where('target_user_id', '==', userId)));
       let data = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
       data = data.filter(d => d.is_active !== false);
-      data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      // Robust sorting: handle missing timestamps by putting them at the end
+      data.sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return timeB - timeA;
+      });
       
       const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
       const processedData = data.map((n: any) => ({
@@ -149,7 +155,9 @@ const Messages: React.FC<MessagesProps> = ({ lang, theme, userId, onRead }) => {
                   selindell
                 </div>
                 <div className={`text-xs mt-0.5 ${theme === 'dark' ? 'text-purple-400/70' : 'text-slate-400'}`}>
-                  {new Date(selectedNotification.created_at).toLocaleString()}
+                  {selectedNotification.created_at 
+                    ? new Date(selectedNotification.created_at).toLocaleString() 
+                    : (lang === 'zh' ? '历史消息' : 'Older')}
                 </div>
               </div>
             </div>
@@ -214,7 +222,7 @@ const Messages: React.FC<MessagesProps> = ({ lang, theme, userId, onRead }) => {
                     selindell
                   </div>
                   <div className={`text-[10px] ${theme === 'dark' ? 'text-purple-500' : 'text-slate-400'}`}>
-                    {new Date(n.created_at).toLocaleString()}
+                    {n.created_at ? new Date(n.created_at).toLocaleString() : (lang === 'zh' ? '历史消息' : 'Older')}
                   </div>
                 </div>
               </div>
