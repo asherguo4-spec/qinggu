@@ -642,14 +642,14 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                         userEmail = auth.currentUser?.email || '';
                       }
 
-                      // 1. 将 Base64 图片上传到 Supabase Storage
+                      // 1. 将 Base64 图片上传到 Cloudinary (原 Supabase Storage 的位置)
                       const imageUrls = await Promise.all(
                         creation.imageUrls.map(async (img) => {
                           try {
                             return await uploadImage(img, 'creations');
-                          } catch (e) {
+                          } catch (e: any) {
                             console.error("Image upload failed for one image:", e);
-                            return img;
+                            throw new Error("图片上传失败。请检查 Cloudinary 配置是否正确，详细错误请查看控制台。");
                           }
                         })
                       );
