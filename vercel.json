@@ -4,6 +4,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/webhook/aifadian",
+      "destination": "/api/webhook/aifadian"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index"
     },
