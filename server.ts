@@ -2,7 +2,7 @@ import express from "express";
 import axios from "axios";
 import path from "path";
 import crypto from "crypto";
-import { createServer as createViteServer } from "vite";
+
 const app = express();
 // const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 // const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
@@ -59,9 +59,9 @@ app.post("/api/checkout", (req, res) => {
 });
 
 // 接收爱发电的 Webhook 通知
-app.post("/api/webhook/aifadian", express.json(), (req, res) => {
+app.post("/api/webhook/aifadian", (req, res) => {
   console.log("Received Aifadian Webhook:", req.body);
-  const { data } = req.body;
+  const { data } = req.body || {};
   
   if (data && data.type === "order" && data.order) {
     const orderId = data.order.out_trade_no;
@@ -120,6 +120,7 @@ app.post("/api/verify-payment", async (req, res) => {
 async function startServer() {
   if (!process.env.VERCEL) {
     if (process.env.NODE_ENV !== "production") {
+      const { createServer: createViteServer } = await import("vite");
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: "spa",
