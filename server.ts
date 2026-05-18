@@ -2,7 +2,6 @@ import express from "express";
 import axios from "axios";
 import path from "path";
 import crypto from "crypto";
-import fs from "fs";
 
 const app = express();
 // const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
@@ -13,43 +12,37 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.static("public"));
 
-// Ensure uploads folder exists
-const uploadsDir = path.join(process.cwd(), "public", "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+import { v2 as cloudinary } from "cloudinary";
 
-app.post("/api/upload", (req, res) => {
+// Configure Cloudinary globally
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+app.post("/api/upload", async (req, res) => {
   try {
     const { image } = req.body; // Base64 string
     if (!image) {
       return res.status(400).json({ error: "Missing image data" });
     }
 
-    // Extract base64 data
-    const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      return res.status(400).json({ error: "Invalid base64 format" });
+    if (!process.env.CLOUDINARY_CLOUD_NAME) {
+      return res.status(500).json({ 
+        error: "Cloudinary 尚未配置！请在设置 (Settings) -> API Keys & Environment 中配置 CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, 和 CLOUDINARY_API_SECRET。" 
+      });
     }
 
-    const type = matches[1];
-    const data = Buffer.from(matches[2], "base64");
-    
-    // Determine extension
-    let ext = "jpeg";
-    if (type.includes("png")) ext = "png";
-    if (type.includes("webp")) ext = "webp";
+    // Cloudinary supports direct base64 string upload
+    const uploadRes = await cloudinary.uploader.upload(image, {
+      folder: "selindell_creations", // A specific folder name
+    });
 
-    const fileName = `img_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
-    const filePath = path.join(uploadsDir, fileName);
-
-    fs.writeFileSync(filePath, data);
-
-    const fileUrl = `/uploads/${fileName}`;
-    return res.json({ url: fileUrl });
+    return res.json({ url: uploadRes.secure_url });
   } catch (error: any) {
-    console.error("Upload error:", error);
-    return res.status(500).json({ error: "Failed to upload image" });
+    console.error("Cloudinary Upload error:", error);
+    return res.status(500).json({ error: "Failed to upload image to Cloudinary" });
   }
 });
 

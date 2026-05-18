@@ -72,7 +72,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   useEffect(() => {
     if (!orderId || !showPaymentModal) return;
     
-    // 监听订单状态
+    // 监听订单状态 (从 Firebase)
     const unsubscribe = onSnapshot(doc(db, 'orders', orderId), (docSnap) => {
       if (docSnap.exists() && docSnap.data().status === 'paid') {
         setShowPaymentModal(false);
@@ -82,8 +82,29 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
         }, 3000);
       }
     });
+
+    // 轮询后端接口 (主动去爱发电查，保证闭环)
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId })
+        });
+        const data = await res.json();
+        if (data.status === 'paid') {
+          // 如果后端确认已付款，则前端触发 Firebase 更新（这样其他监听者也能收到通知）
+          await updateDoc(doc(db, 'orders', orderId), { status: 'paid' });
+        }
+      } catch (err) {
+        console.error("Payment verification failed", err);
+      }
+    }, 3000);
     
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearInterval(timer);
+    };
   }, [orderId, showPaymentModal]);
 
   useEffect(() => {
@@ -675,8 +696,10 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                         throw new Error(result.error || "Failed to create payment url");
                       }
                       
-                      // 直接跳转至爱发电付款界面
-                      window.location.href = result.payUrl;
+                      // 显示付款弹窗并开始轮询
+                      setPayUrl(result.payUrl);
+                      setShowPaymentModal(true);
+                      setIsProcessing(false);
 
                     } catch (error: any) {
                       console.error("下单错误:", error);

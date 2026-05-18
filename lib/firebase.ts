@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, deleteDoc, updateDoc, onSnapshot, orderBy, getDocFromServer } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
@@ -21,7 +20,6 @@ async function testConnection() {
 }
 testConnection();
 
-export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export const logAction = async (userId: string, action: string, details?: any) => {
@@ -39,8 +37,6 @@ export const logAction = async (userId: string, action: string, details?: any) =
 };
 
 export const uploadImage = async (imageData: string, bucketName: string = 'creations'): Promise<string> => {
-  // Use our local Node.js endpoint to save base64 locally to avoid Firestore 1MB document limits.
-  // Images are written to public/uploads folder.
   if (imageData.startsWith("data:image")) {
     try {
       const res = await fetch("/api/upload", {
@@ -49,12 +45,14 @@ export const uploadImage = async (imageData: string, bucketName: string = 'creat
         body: JSON.stringify({ image: imageData }),
       });
       if (!res.ok) {
-        throw new Error(`Upload failed with status ${res.status} ${await res.text()}`);
+        const text = await res.text();
+        throw new Error(`Upload failed with status ${res.status}: ${text}`);
       }
       const data = await res.json();
       if (data.url) return data.url;
     } catch (e) {
-      console.error("Local upload failed", e);
+      console.error("Cloudinary upload proxy failed:", e);
+      throw e;
     }
   }
   return imageData;
