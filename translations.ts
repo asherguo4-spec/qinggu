@@ -213,7 +213,7 @@ const zh = {
     },
     loading: {
       title: '正在造物...',
-      core: 'Tinku 1.4 核心激活',
+      core: 'Tinku 1.8 核心激活',
       path: '正在解析 3D 打印路径',
       thinking: '深度构思中',
       hint: 'AI 引擎正在深度构思细节，当前网络略显拥挤，请再稍等片刻...'

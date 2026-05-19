@@ -57,7 +57,7 @@ export class SelindellAIService {
           content: [
             {
               type: "text",
-              text: `Analyze this image and extract the core features of the main character/subject (hair, clothing, colors, posture). Ignore the background. Convert it into a concise English description suitable for designing a 3D printable action figure. Keep it under 50 words. Additional user request: ${userPrompt}`
+              text: `请仔细分析这张图像，提取其中的核心主体（不仅限于人物，可能是任何物体，如物品、动物、汽车、建筑等）。如果用户的指令指定了生成某特定物体（比如“只做旁边的摩托车”），请严格遵照用户指令提取。提取其外形、颜色等核心特征并忽略背景。将这些特征转化为段简明准确的描述，用于后续生成树脂材质实体潮玩手办。用户的具体要求是：${userPrompt}。如果未提供额外要求，请仅提取主要事物。请用中文回答，字数控制在50字以内。`
             },
             {
               type: "image_url",
@@ -125,7 +125,14 @@ export class SelindellAIService {
       coreSubject = await this.analyzeReferenceImage(base64Image, prompt, signal);
     }
 
-    const finalPrompt = `white background, physical action figure, ${coreSubject}, ${styleSuffix}, standing on a minimal support base, the word "selindell" must be clearly written on the base. The image MUST show TWO FULLY RENDERED 3D FIGURES side-by-side: a 3D front view on the left, and a 3D back view on the right. BOTH views must be in full color, realistic 3D, with physical material and studio lighting. NO 2D drawings, NO flat sketches, NO blueprints. Both figures must stand on their own "selindell" base.`;
+    const finalPrompt = `白色背景，实物潮玩手办。
+主体内容：${coreSubject}。
+整体风格：${styleSuffix}。
+材质要求：必须为树脂材质。
+设计要求：造型需适度写实但必须结构简单、紧凑，避免悬空过大或极度纤细的易断部件，确保低成本3D打印（控制在200元以内复杂度的打印成本）。
+底座要求：主体必须站在一个极简底座上，且底座上必须清晰写有“selindell”字样。
+构图与视角：图像必须侧对侧首尾并排展示两个同一手办的完整3D渲染图——左侧为3D前视图，右侧为3D后视图。
+画面渲染：两视图均需全彩、写实3D，具备真实的物理世界树脂反光和摄影棚级布光。严禁2D插图、漫画线稿、平面草图或设计蓝图，必须看起来像真实摆放的手办商品照，且必须符合物理生产规律。`;
 
     try {
       const data = await this.callOpenRouter(
