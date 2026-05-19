@@ -726,31 +726,11 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
         </div>
       )}
 
-      <div className={`fixed bottom-24 right-6 z-50 transition-all duration-500 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'}`}>
+      <div className={`hidden md:flex fixed bottom-24 right-6 z-50 transition-all duration-500 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'}`}>
         <button onClick={scrollToInput} className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-xl border border-gray-100 flex items-center justify-center text-gray-400 shadow-[0_12px_24px_rgba(0,0,0,0.06)] active:scale-90 hover:text-purple-600 transition-all">
           <ChevronUp size={24} strokeWidth={2.5} />
         </button>
       </div>
-
-      {/* Mobile Fixed CTA */}
-      {!isSquareOnly && currentView === AppView.HOME && (
-        <div className={`md:hidden fixed bottom-24 left-0 right-0 px-6 z-40 pointer-events-none transition-all duration-500 ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-          <div className="flex justify-center">
-            <button
-              onClick={handleGenerateClick}
-              disabled={(!prompt.trim() && !referenceImage) || isGenerating}
-              className={`w-full max-w-sm h-16 rounded-full flex items-center justify-center space-x-2 font-black text-lg transition-all shadow-2xl pointer-events-auto ${
-                (prompt.trim() || referenceImage) && !isGenerating 
-                  ? 'purple-gradient text-white active:scale-95 animate-pulsing-glow' 
-                  : theme === 'dark' ? 'bg-purple-900/90 backdrop-blur-md text-purple-300/20 cursor-not-allowed border border-purple-800/50' : 'bg-slate-100/90 backdrop-blur-md text-slate-300 cursor-not-allowed border border-slate-200/50'
-              }`}
-            >
-              {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
-              <span>{isGenerating ? t.generating : t.generateBtn}</span>
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

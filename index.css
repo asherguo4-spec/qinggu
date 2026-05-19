@@ -107,3 +107,23 @@ body {
 .dark .glass-card {
   @apply bg-[#1C1C1E]/90 backdrop-blur-xl border border-white/5 shadow-lg rounded-2xl;
 }
+
+/* WeChat Mini Program standard overrides */
+button, 
+[role="button"],
+a {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* No text less than 12px */
+.text-\[9px\], .text-\[10px\], .text-\[11px\], .text-\[8px\] {
+  font-size: 12px !important;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+}
+

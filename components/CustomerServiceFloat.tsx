@@ -5,7 +5,7 @@ const CustomerServiceFloat: React.FC<{ theme?: 'light' | 'dark' }> = ({ theme = 
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-6 right-6 z-[90]">
+    <div className="hidden md:block fixed bottom-6 right-6 z-[90]">
       {isOpen && (
         <div className={`absolute bottom-16 right-0 mb-4 w-72 p-6 rounded-3xl shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom-2 ${theme === 'dark' ? 'bg-[#2d1b4e]/90 backdrop-blur-xl border border-purple-800/50' : 'bg-white/90 backdrop-blur-xl border border-purple-100'}`}>
           <div className="flex justify-between items-center mb-4">
