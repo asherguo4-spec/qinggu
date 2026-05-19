@@ -134,17 +134,28 @@ export class SelindellAIService {
 构图与视角：图像必须侧对侧首尾并排展示两个同一手办的完整3D渲染图——左侧为3D前视图，右侧为3D后视图。
 画面渲染：两视图均需全彩、写实3D，具备真实的物理世界树脂反光和摄影棚级布光。严禁2D插图、漫画线稿、平面草图或设计蓝图，必须看起来像真实摆放的手办商品照，且必须符合物理生产规律。`;
 
+    let contentArray: any[] = [
+      {
+        type: "text",
+        text: finalPrompt
+      }
+    ];
+
+    if (base64Image) {
+      contentArray.push({
+        type: "image_url",
+        image_url: {
+          url: base64Image
+        }
+      });
+    }
+
     try {
       const data = await this.callOpenRouter(
         "seedream-4.5",
         [{ 
           role: "user", 
-          content: [
-            {
-              type: "text",
-              text: finalPrompt
-            }
-          ] 
+          content: contentArray
         }],
         undefined,
         signal

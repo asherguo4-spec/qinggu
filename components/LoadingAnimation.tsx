@@ -32,9 +32,11 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ lang = 'zh', showHi
         <div className={`absolute inset-5 border-b-[2px] rounded-full animate-[spin_3s_linear_infinite_reverse] ${theme === 'dark' ? 'border-pink-900/20' : 'border-pink-100'}`}></div>
         
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-18 h-18 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl rotate-45 animate-pulse shadow-[0_15px_40px_rgba(168,85,247,0.3)] flex items-center justify-center">
-            <span className="text-white font-black -rotate-45 tracking-tighter text-sm uppercase">TINKU</span>
-          </div>
+          <img 
+            src="/tinku.png" 
+            alt="TINKU" 
+            className="w-24 h-24 rounded-2xl animate-pulse shadow-[0_15px_40px_rgba(168,85,247,0.3)] object-cover" 
+          />
         </div>
       </div>
       
@@ -50,6 +52,9 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ lang = 'zh', showHi
             </p>
             <div className={`h-[1px] w-6 ${theme === 'dark' ? 'bg-purple-900' : 'bg-purple-100'}`}></div>
           </div>
+          <p className={`text-[10px] pt-2 font-medium tracking-widest ${theme === 'dark' ? 'text-purple-300/60' : 'text-gray-400'}`}>
+            图片由 倾谷AI（TINKU）大模型生成
+          </p>
         </div>
 
         <div className={`relative h-2 w-full rounded-full overflow-hidden p-[1.5px] border shadow-inner ${theme === 'dark' ? 'bg-purple-950 border-purple-900/50' : 'bg-gray-100 border-gray-50'}`}>
@@ -68,17 +73,30 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ lang = 'zh', showHi
         </div>
       </div>
 
-      {showHint && (
-        <div className="pt-8 text-center animate-in fade-in slide-in-from-bottom-2 duration-700 w-full max-w-[280px]">
-          <div className="flex items-center justify-center space-x-2 text-purple-600/60 mb-3">
-            <Clock size={14} className="animate-spin" />
-            <span className="text-[10px] font-black uppercase tracking-widest">{t.thinking}</span>
+      <div className="pt-8 text-center min-h-[100px] w-full max-w-[280px] relative">
+        {progress < 70 ? (
+          <div className="absolute inset-0 flex flex-col items-center animate-in fade-in zoom-in-95 duration-700">
+            <div className="space-y-3 mt-4">
+               <p className={`text-[10px] font-bold uppercase tracking-[0.3em] ${theme === 'dark' ? 'text-purple-500/40' : 'text-purple-400/60'}`}>
+                 Powered by TINKU AI
+               </p>
+               <p className={`text-[11px] font-medium leading-relaxed tracking-wider ${theme === 'dark' ? 'text-purple-300/40' : 'text-gray-400'}`}>
+                 倾谷大模型由 跃壹知品(郑州)科技有限公司 研发
+               </p>
+             </div>
           </div>
-          <p className={`text-[11px] font-medium leading-relaxed ${theme === 'dark' ? 'text-purple-300/60' : 'text-gray-500'}`}>
-            {t.hint}
-          </p>
-        </div>
-      )}
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2 duration-700">
+            <div className="flex items-center justify-center space-x-2 text-purple-600/60 mb-3">
+              <Clock size={14} className="animate-spin" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{t.thinking}</span>
+            </div>
+            <p className={`text-[11px] font-medium leading-relaxed ${theme === 'dark' ? 'text-purple-300/60' : 'text-gray-500'}`}>
+              {t.hint}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
