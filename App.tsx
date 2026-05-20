@@ -24,12 +24,44 @@ import CustomerServiceFloat from './components/CustomerServiceFloat';
 
 const App: React.FC = () => {
   // 1. 所有的 Hook 必须放在组件的最顶部，绝对不能放在任何 if 之后
-  const [currentView, setCurrentView] = useState<AppView>(AppView.HOME);
+  const [currentView, setCurrentView] = useState<AppView>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('appCurrentView');
+      return saved ? (saved as AppView) : AppView.HOME;
+    }
+    return AppView.HOME;
+  });
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [myCreations, setMyCreations] = useState<GeneratedCreation[]>([]);
-  const [pendingOrder, setPendingOrder] = useState<GeneratedCreation | null>(null);
+  const [pendingOrder, setPendingOrder] = useState<GeneratedCreation | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('appPendingOrder');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch(e) {}
+      }
+    }
+    return null;
+  });
   const [selectedOrder, setSelectedOrder] = useState<GeneratedCreation | null>(null);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('appCurrentView', currentView);
+    }
+  }, [currentView]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (pendingOrder) {
+        localStorage.setItem('appPendingOrder', JSON.stringify(pendingOrder));
+      } else {
+        localStorage.removeItem('appPendingOrder');
+      }
+    }
+  }, [pendingOrder]);
   const [orderCount, setOrderCount] = useState(0);
   const [lang, setLang] = useState<LanguageCode>('zh');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
