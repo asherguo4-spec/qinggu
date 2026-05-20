@@ -59,9 +59,6 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   const [isShared, setIsShared] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [payUrl, setPayUrl] = useState<string>('');
-  const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
   const [guestEmailForOrder, setGuestEmailForOrder] = useState<string>('');
   const [isFormValid, setIsFormValid] = useState(false);
   const [isSdkLoading, setIsSdkLoading] = useState(false);
@@ -71,68 +68,9 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   const [showPaymentConfirmBtn, setShowPaymentConfirmBtn] = useState(false);
 
   useEffect(() => {
-    // 恢复未付款的订单
-    const stored = localStorage.getItem('pendingOrderState');
-    if (stored && !isSuccess) {
-      try {
-        const { orderId: pendingId, email } = JSON.parse(stored);
-        if (pendingId) {
-          setOrderId(pendingId);
-          setGuestEmailForOrder(email || '');
-          setPayUrl("/wxpay.png");
-          setShowPaymentModal(true);
-        }
-      } catch (e) {
-        console.error("Failed to parse pending order", e);
-      }
-    }
+    const timer = setTimeout(() => setShowPaymentConfirmBtn(true), 3000);
+    return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (showPaymentModal) {
-      setShowPaymentConfirmBtn(false);
-      const timer = setTimeout(() => setShowPaymentConfirmBtn(true), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showPaymentModal]);
-
-  useEffect(() => {
-    if (!orderId || !showPaymentModal) return;
-    
-    // 监听订单状态 (从 Firebase)
-    const unsubscribe = onSnapshot(doc(db, 'orders', orderId), (docSnap) => {
-      if (docSnap.exists() && docSnap.data().status === 'paid') {
-        setShowPaymentModal(false);
-        setIsSuccess(true);
-        setTimeout(() => {
-          onPaymentComplete(creation.id, guestEmailForOrder);
-        }, 3000);
-      }
-    });
-
-    // 轮询后端接口 (主动去爱发电查，保证闭环)
-    const timer = setInterval(async () => {
-      try {
-        const res = await fetch('/api/verify-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId })
-        });
-        const data = await res.json();
-        if (data.status === 'paid') {
-          // 如果后端确认已付款，则前端触发 Firebase 更新（这样其他监听者也能收到通知）
-          await updateDoc(doc(db, 'orders', orderId), { status: 'paid' });
-        }
-      } catch (err) {
-        console.error("Payment verification failed", err);
-      }
-    }, 3000);
-    
-    return () => {
-      unsubscribe();
-      clearInterval(timer);
-    };
-  }, [orderId, showPaymentModal]);
 
   useEffect(() => {
     if (userId && creation) {
@@ -603,106 +541,112 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                 <span className={`text-5xl font-black tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>¥299</span>
               </div>
 
-              <div className="relative w-full mt-4 min-h-[60px] space-y-6">
-                {/* 支付按钮 */}
-                <button
-                  onClick={async () => {
-                    if (!isFormValid) {
-                      const error = validateForm();
-                      if (error) setErrorMsg(error);
-                      return;
-                    }
-                    setIsProcessing(true);
-                    try {
-                      const data = formRef.current;
-                      
-                      // 获取用户邮箱用于 Whop 结账和 Webhook 匹配
-                      let userEmail = data.email;
-                      if (!isGuest) {
-                        userEmail = auth.currentUser?.email || '';
-                      }
+              <div className="relative w-full mt-4 min-h-[60px] space-y-6 flex flex-col items-center border-t border-dashed border-gray-200/50 pt-8">
+                 <h3 className={`text-lg font-black mb-2 tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                   {lang === 'zh' ? '请使用微信扫码付款' : 'Please scan to pay via WeChat'}
+                 </h3>
+                 <div className="w-64 h-64 bg-gray-100 rounded-3xl overflow-hidden relative border-4 border-[#07c160] shadow-lg shadow-[#07c160]/20">
+                   <img 
+                     src="/wxpay.png" 
+                     alt="WeChat Pay QR Code" 
+                     className="w-full h-full object-cover pointer-events-auto select-none"
+                     style={{ WebkitTouchCallout: 'default' }}
+                   />
+                   <div className="absolute bottom-0 left-0 right-0 bg-[#07c160]/90 py-2 flex items-center justify-center space-x-2 text-white pointer-events-none">
+                      <svg viewBox="0 0 1024 1024" className="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M512 0c282.752 0 512 229.248 512 512s-229.248 512-512 512S0 794.752 0 512 229.248 0 512 0zm-155.648 409.6a55.296 55.296 0 1 0 0-110.592 55.296 55.296 0 0 0 0 110.592zm311.296 0a55.296 55.296 0 1 0 0-110.592 55.296 55.296 0 0 0 0 110.592zM512 905.216c204.8 0 384-142.336 384-332.8S716.8 239.616 512 239.616 128 381.952 128 572.416 307.2 905.216 512 905.216zm-59.392-411.648a274.432 274.432 0 0 1 118.784 0 25.6 25.6 0 1 0-7.168-50.688 325.632 325.632 0 0 0-104.448 0 25.6 25.6 0 1 0-7.168 50.688z"/></svg>
+                      <span className="text-xs font-bold tracking-widest">{lang === 'zh' ? '长按保存或识别二维码' : 'Long press to scan'}</span>
+                   </div>
+                 </div>
 
-                      // 1. 将 Base64 图片上传到 Cloudinary (原 Supabase Storage 的位置)
-                      const imageUrls = await Promise.all(
-                        creation.imageUrls.map(async (img) => {
-                          try {
-                            return await uploadImage(img, 'creations');
-                          } catch (e: any) {
-                            console.error("Image upload failed for one image:", e);
-                            throw new Error("图片上传失败。Please check the network and try again.");
-                          }
-                        })
-                      );
-
-                      // 2. 保存订单到 Supabase，状态为 pending
-                      const orderPayload = {
-                        user_id: userId,
-                        guest_email: userEmail,
-                        title: creation.title,
-                        prompt: creation.prompt,
-                        style: creation.style,
-                        amount: 299,
-                        status: 'pending',
-                        is_public: false,
-                        story_card: creation.storyCard || null,
-                        preview_images: imageUrls,
-                        shipping_info: isGuest ? {
-                          email: data.email,
-                          name: data.name,
-                          phone: data.phone,
-                          addressLine1: data.addressLine1,
-                          city: data.city,
-                          state: data.state,
-                          zipCode: data.zipCode,
-                          country: data.country
-                        } : {
-                          address_id: data.selectedAddressId
+                 <div className="w-full mt-6">
+                 {showPaymentConfirmBtn ? (
+                    <button
+                      onClick={async () => {
+                        if (!isFormValid) {
+                          const error = validateForm();
+                          if (error) setErrorMsg(error);
+                          return;
                         }
-                      };
+                        setIsProcessing(true);
+                        try {
+                          const data = formRef.current;
+                          
+                          let userEmail = data.email;
+                          if (!isGuest) {
+                            const { data: userData } = await supabase.auth.getUser();
+                            userEmail = userData?.user?.email || '';
+                          }
 
-                      const docRef = await addDoc(collection(db, 'orders'), orderPayload);
-                      setOrderId(docRef.id);
-                      setGuestEmailForOrder(userEmail);
+                          const imageUrls = await Promise.all(
+                            creation.imageUrls.map(async (img) => {
+                              try {
+                                return await uploadImage(img, 'creations');
+                              } catch (e: any) {
+                                console.error("Image upload failed for one image:", e);
+                                throw new Error("图片上传失败。Please check the network and try again.");
+                              }
+                            })
+                          );
 
-                      // 3. 记录本地未付款状态 (处理重载页面恢复)
-                      localStorage.setItem('pendingOrderState', JSON.stringify({
-                         orderId: docRef.id,
-                         email: userEmail
-                      }));
+                          const orderPayload = {
+                            user_id: userId,
+                            guest_email: userEmail,
+                            title: creation.title,
+                            prompt: creation.prompt,
+                            style: creation.style,
+                            amount: 299,
+                            status: 'paid_manual',
+                            is_public: false,
+                            story_card: creation.storyCard || null,
+                            preview_images: imageUrls.length > 0 ? imageUrls : creation.imageUrls,
+                            shipping_info: isGuest ? {
+                              email: data.email,
+                              name: data.name,
+                              phone: data.phone,
+                              addressLine1: data.addressLine1,
+                              city: data.city,
+                              state: data.state,
+                              zipCode: data.zipCode,
+                              country: data.country
+                            } : {
+                              address_id: data.selectedAddressId
+                            }
+                          };
 
-                      // 显示付款弹窗并开始定时器
-                      setPayUrl("/wxpay.png"); // 使用固定的本地二维码图片
-                      setShowPaymentModal(true);
-                      setIsProcessing(false);
+                          const docRef = await addDoc(collection(db, 'orders'), orderPayload);
+                          setOrderId(docRef.id);
+                          setGuestEmailForOrder(userEmail);
+                          
+                          setIsSuccess(true);
+                          setTimeout(() => {
+                            onPaymentComplete(creation.id, userEmail);
+                          }, 1500);
 
-                    } catch (error: any) {
-                      console.error("下单错误:", error);
-                      setErrorMsg(lang === 'zh' ? '下单失败，请稍后重试' : 'Checkout failed, please try again later');
-                      setIsProcessing(false);
-                    }
-                  }}
-                  className={`w-full py-4 mt-4 rounded-full font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center space-x-2 ${
-                    isProcessing ? 'opacity-50 cursor-not-allowed ' : ''
-                  }${
-                    theme === 'dark' 
-                      ? 'bg-blue-600 text-white hover:bg-blue-500 active:scale-95 shadow-lg shadow-blue-900/50' 
-                      : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95 shadow-lg shadow-blue-200'
-                  }`}
-                  disabled={isProcessing}
-                >
-                  <Globe size={18} />
-                  <span>{lang === 'zh' ? '去付款 (支持微信/支付宝)' : 'Checkout'}</span>
-                </button>
-
-                {/* 处理中遮罩 (Processing Overlay) */}
-                {isProcessing && (
-                  <div className={`absolute inset-0 backdrop-blur-md z-20 flex flex-col items-center justify-center rounded-2xl ${theme === 'dark' ? 'bg-purple-900/90' : 'bg-white/90'}`}>
-                    <Loader2 size={28} className="animate-spin text-blue-500 mb-4" />
-                    <span className={`text-sm font-black uppercase tracking-widest text-center px-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      {lang === 'zh' ? '正在生成订单...' : 'Creating order...'}
-                    </span>
-                  </div>
-                )}
+                        } catch (error: any) {
+                          console.error("下单错误:", error);
+                          setErrorMsg(lang === 'zh' ? '下单失败，请稍后重试' : 'Checkout failed, please try again later');
+                          setIsProcessing(false);
+                        }
+                      }}
+                      disabled={isProcessing}
+                      className={`w-full py-4 rounded-full font-black text-sm uppercase tracking-widest transition-all bg-[#07c160] text-white hover:bg-[#06ad56] shadow-lg shadow-[#07c160]/30 animate-in fade-in slide-in-from-bottom-4 duration-500 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {isProcessing ? (
+                        <div className="flex justify-center items-center space-x-2">
+                           <Loader2 size={18} className="animate-spin" />
+                           <span>{lang === 'zh' ? '处理中...' : 'Processing...'}</span>
+                        </div>
+                      ) : (
+                        lang === 'zh' ? '我已付款进入下一步' : 'I have paid, continue'
+                      )}
+                    </button>
+                 ) : (
+                    <div className="w-full py-4 flex flex-col items-center justify-center space-y-2 text-gray-400 min-h-[56px] border-2 border-dashed border-gray-200 rounded-full bg-gray-50/50">
+                      <Loader2 size={18} className="animate-spin" />
+                      <span className="text-xs font-bold tracking-widest">{lang === 'zh' ? '请扫码完成付款...' : 'Waiting for payment...'}</span>
+                    </div>
+                 )}
+                 </div>
               </div>
               
               {/* Save for later section */}
@@ -741,65 +685,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
           </div>
         </div>
 
-        {/* 支付方式弹窗 (Payment Modal) */}
-        {showPaymentModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)}></div>
-            <div className={`relative w-full max-w-md flex flex-col items-center justify-center rounded-[32px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 p-8 ${theme === 'dark' ? 'bg-[#1a0b2e] border border-purple-800' : 'bg-white border border-gray-100'}`}>
-              <h3 className={`text-2xl font-black mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                {lang === 'zh' ? '请扫码付款' : 'Please Scan to Pay'}
-              </h3>
-              
-              <div className="w-64 h-64 bg-gray-100 rounded-3xl overflow-hidden mb-8 relative border-4 border-[#07c160] shadow-lg shadow-[#07c160]/20">
-                <img 
-                  src="/wxpay.png" 
-                  alt="WeChat Pay QR Code" 
-                  className="w-full h-full object-cover pointer-events-auto"
-                  style={{ WebkitTouchCallout: 'default' }}
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-[#07c160]/90 py-2 flex items-center justify-center space-x-2 text-white">
-                   <svg viewBox="0 0 1024 1024" className="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M512 0c282.752 0 512 229.248 512 512s-229.248 512-512 512S0 794.752 0 512 229.248 0 512 0zm-155.648 409.6a55.296 55.296 0 1 0 0-110.592 55.296 55.296 0 0 0 0 110.592zm311.296 0a55.296 55.296 0 1 0 0-110.592 55.296 55.296 0 0 0 0 110.592zM512 905.216c204.8 0 384-142.336 384-332.8S716.8 239.616 512 239.616 128 381.952 128 572.416 307.2 905.216 512 905.216zm-59.392-411.648a274.432 274.432 0 0 1 118.784 0 25.6 25.6 0 1 0-7.168-50.688 325.632 325.632 0 0 0-104.448 0 25.6 25.6 0 1 0-7.168 50.688z"/></svg>
-                   <span className="text-xs font-bold tracking-widest">{lang === 'zh' ? '长按保存或识别二维码' : 'Long press to scan'}</span>
-                </div>
-              </div>
 
-              {showPaymentConfirmBtn ? (
-                <button
-                  onClick={async () => {
-                    setShowPaymentModal(false);
-                    // 清除本地记录
-                    localStorage.removeItem('pendingOrderState');
-                    // 直接标记成功
-                    setIsSuccess(true);
-                    if (orderId) {
-                      try {
-                        await updateDoc(doc(db, 'orders', orderId), { status: 'paid_manual' });
-                      } catch(e) { console.error("Manual pay status update failed", e); }
-                    }
-                    setTimeout(() => {
-                      onPaymentComplete(creation.id, guestEmailForOrder);
-                    }, 1000);
-                  }}
-                  className="w-full py-4 rounded-full font-black text-sm uppercase tracking-widest transition-all bg-[#07c160] text-white hover:bg-[#06ad56] shadow-lg shadow-[#07c160]/30 animate-in fade-in slide-in-from-bottom-4 duration-500"
-                >
-                  {lang === 'zh' ? '我已付款进入下一步' : 'I have paid, continue'}
-                </button>
-              ) : (
-                <div className="w-full py-4 flex items-center justify-center space-x-2 text-gray-400">
-                  <Loader2 size={18} className="animate-spin" />
-                  <span className="text-sm font-bold">{lang === 'zh' ? '等待付款完成...' : 'Waiting for payment...'}</span>
-                </div>
-              )}
-              
-              <button 
-                onClick={() => setShowPaymentModal(false)}
-                className={`mt-4 text-xs font-medium underline-offset-4 hover:underline ${theme === 'dark' ? 'text-purple-400/60' : 'text-gray-400'}`}
-              >
-                {lang === 'zh' ? '稍后付款 (暂存修改)' : 'Pay later'}
-              </button>
-            </div>
-          </div>
-        )}
 
       </div>
     </div>

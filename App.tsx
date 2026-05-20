@@ -14,9 +14,11 @@ import Register from './views/Register';
 import AboutUs from './views/AboutUs';
 import OrderDetail from './views/OrderDetail';
 import { auth, db, logAction } from './lib/supabase';
-import { onAuthStateChanged, signOut, User } from './lib/supabase';
+import { onAuthStateChanged, signOut } from './lib/supabase';
 import { collection, query, where, getDocs, getDoc, doc, setDoc, deleteDoc, addDoc, count, updateDoc } from './lib/supabase';
 import { translations, LanguageCode } from './translations';
+
+type User = { uid: string; email?: string };
 import { Globe, ChevronDown, Home as HomeIcon, Compass, ShoppingBag, User as UserIcon, Sun, Moon, MessageSquare, Menu, X, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 
 
@@ -168,7 +170,7 @@ const App: React.FC = () => {
     const initAuth = async () => {
       const forceEndLoading = setTimeout(() => setIsLoadingProfile(false), 2000);
       try {
-        if (typeof auth.authStateReady === 'function') {
+        if (typeof (auth as any).authStateReady === 'function') {
            await (auth as any).authStateReady();
            await handleAuthChange((auth as any).currentUser);
         } else {
@@ -254,8 +256,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handleRegisterSuccess = () => {
-    handleAuthChange(auth.currentUser);
+  const handleRegisterSuccess = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    await handleAuthChange(user ? { uid: user.id, email: user.email } : null);
     if (pendingOrder) setCurrentView(AppView.RESULT);
     else setCurrentView(AppView.PROFILE);
   };
