@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, MapPin, CheckCircle2, ShieldCheck, Mail, Globe, Lock, Loader2, Sparkles } from 'lucide-react';
 import { GeneratedCreation, Address, AppView } from '../types';
-import { uploadImage, db } from '../lib/firebase';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc, onSnapshot } from 'firebase/firestore';
-import { auth } from '../lib/firebase';
+import { uploadImage, db } from '../lib/supabase';
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc, onSnapshot } from '../lib/supabase';
+import { auth } from '../lib/supabase';
 import { aiService } from '../services/aiService';
 import { translations, LanguageCode } from '../translations';
 

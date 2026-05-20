@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, query, where, orderBy, getDocs, doc, setDoc } from 'firebase/firestore';
+import { db } from '../lib/supabase';
+import { collection, query, where, orderBy, getDocs, doc, setDoc } from '../lib/supabase';
 import { ChevronLeft } from 'lucide-react';
 import { LanguageCode } from '../translations';
 

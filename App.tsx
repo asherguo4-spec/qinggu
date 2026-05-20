@@ -13,9 +13,9 @@ import SettingsView from './views/Settings';
 import Register from './views/Register';
 import AboutUs from './views/AboutUs';
 import OrderDetail from './views/OrderDetail';
-import { auth, db, logAction } from './lib/firebase';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { collection, query, where, getDocs, getDoc, doc, setDoc, deleteDoc, addDoc, count, updateDoc } from 'firebase/firestore';
+import { auth, db, logAction } from './lib/supabase';
+import { onAuthStateChanged, signOut, User } from './lib/supabase';
+import { collection, query, where, getDocs, getDoc, doc, setDoc, deleteDoc, addDoc, count, updateDoc } from './lib/supabase';
 import { translations, LanguageCode } from './translations';
 import { Globe, ChevronDown, Home as HomeIcon, Compass, ShoppingBag, User as UserIcon, Sun, Moon, MessageSquare, Menu, X, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 

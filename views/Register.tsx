@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { Sparkles, Mail, Lock, Loader2, ArrowRight, User, LogIn, CheckCircle2, ChevronLeft, AlertCircle } from 'lucide-react';
-import { auth, db } from '../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../lib/supabase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from '../lib/supabase';
+import { doc, getDoc, setDoc, addDoc, collection, query, where, getDocs } from '../lib/supabase';
 import { translations, LanguageCode } from '../translations';
 
 interface RegisterProps {

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { GeneratedCreation, AppView } from '../types';
 import { Loader2, RefreshCw, AlertCircle, SearchX, ChevronLeft, Heart, Trash2 } from 'lucide-react';
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, deleteDoc, doc, documentId } from 'firebase/firestore';
+import { db } from '../lib/supabase';
+import { collection, query, where, getDocs, deleteDoc, doc, documentId } from '../lib/supabase';
 import { translations, LanguageCode } from '../translations';
 
 interface FavoritesProps {

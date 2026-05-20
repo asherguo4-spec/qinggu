@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { GeneratedCreation, AppView } from '../types';
 import { Loader2, RefreshCw, AlertCircle, Plus, SearchX, Package, Truck, CheckCircle, Clock } from 'lucide-react';
-import { db } from '../lib/firebase';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { db } from '../lib/supabase';
+import { collection, query, where, orderBy, getDocs } from '../lib/supabase';
 import { translations, LanguageCode } from '../translations';
 
 interface OrdersProps {

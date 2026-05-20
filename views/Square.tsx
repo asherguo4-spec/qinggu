@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { GeneratedCreation } from '../types';
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import { db } from '../lib/supabase';
+import { collection, query, where, getDocs, limit, orderBy } from '../lib/supabase';
 import { Loader2, Sparkles, X } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
 

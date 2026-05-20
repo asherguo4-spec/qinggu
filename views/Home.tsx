@@ -7,8 +7,8 @@ import LoadingAnimation from '../components/LoadingAnimation';
 import { geminiService } from '../services/aiService'; 
 import ActionFigure3DViewer from '../components/ActionFigure3DViewer';
 import StatsCard from '../components/StatsCard';
-import { db } from '../lib/firebase';
-import { collection, query, where, orderBy, getDocs, limit, doc, setDoc, deleteDoc, addDoc, documentId } from 'firebase/firestore';
+import { db } from '../lib/supabase';
+import { collection, query, where, orderBy, getDocs, limit, doc, setDoc, deleteDoc, addDoc, documentId } from '../lib/supabase';
 import { translations, LanguageCode } from '../translations';
 
 interface HomeProps {

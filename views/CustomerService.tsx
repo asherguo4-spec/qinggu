@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { ChevronLeft, MessageCircle, Mail, HelpCircle, Send, CheckCircle2, Loader2, Lock, Sparkles, Headphones, User } from 'lucide-react';
-import { db } from '../lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../lib/supabase';
+import { collection, addDoc } from '../lib/supabase';
 import { translations, LanguageCode } from '../translations';
 
 interface CustomerServiceProps {

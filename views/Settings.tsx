@@ -2,8 +2,8 @@
 import React, { useState, useRef } from 'react';
 import { ChevronLeft, Camera, User, Mail, FileText, Check, Loader2, LogOut, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { UserProfile } from '../types';
-import { db } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../lib/supabase';
+import { doc, setDoc } from '../lib/supabase';
 import { translations, LanguageCode } from '../translations';
 
 interface SettingsProps { 

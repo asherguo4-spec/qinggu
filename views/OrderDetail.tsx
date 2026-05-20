@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { GeneratedCreation, AppView } from '../types';
 import { ChevronLeft, Package, Truck, CheckCircle, Clock, MapPin, Share2, Globe, Lock, Info, Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { translations, LanguageCode } from '../translations';
-import { db } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../lib/supabase';
+import { doc, setDoc } from '../lib/supabase';
 import SharePopup from '../components/SharePopup';
 
 interface OrderDetailProps {
