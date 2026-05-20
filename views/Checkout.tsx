@@ -179,9 +179,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
         return (
           guestForm.email.includes('@') &&
           guestForm.name.trim().length > 0 &&
-          guestForm.addressLine1.trim().length > 0 &&
-          guestForm.city.trim().length > 0 &&
-          guestForm.zipCode.trim().length > 0
+          guestForm.addressLine1.trim().length > 0
         );
       } else {
         return selectedAddressId !== '';
@@ -196,8 +194,6 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
       if (!data.email.includes('@')) return t.validateEmail;
       if (!data.name.trim()) return t.validateName;
       if (!data.addressLine1.trim()) return t.validateStreet;
-      if (!data.city.trim()) return t.validateCity;
-      if (!data.zipCode.trim()) return t.validateZip;
     } else if (!data.selectedAddressId) {
       return t.validateAddress;
     }
@@ -474,7 +470,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                 </div>
 
                 <div className="space-y-2">
-                  <label className={`text-[9px] font-black uppercase tracking-widest px-1 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.addressLabel} (Line 1)</label>
+                  <label className={`text-[9px] font-black uppercase tracking-widest px-1 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.addressLabel}</label>
                   <div className={`rounded-2xl p-4 border transition-all ${theme === 'dark' ? 'bg-purple-900/40 border-purple-800/30 focus-within:bg-purple-900/60 focus-within:border-purple-500' : 'bg-gray-50 border-gray-100 focus-within:bg-white focus-within:border-purple-200'}`}>
                     <input 
                       type="text" 
@@ -482,49 +478,6 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                       className={`bg-transparent border-none focus:ring-0 text-sm w-full font-bold ${theme === 'dark' ? 'text-white placeholder:text-purple-400/30' : 'text-gray-900 placeholder:text-gray-300'}`}
                       value={guestForm.addressLine1}
                       onChange={(e) => setGuestForm({...guestForm, addressLine1: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={`text-[9px] font-black uppercase tracking-widest px-1 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.addressLabel} (Line 2 - Optional)</label>
-                  <div className={`rounded-2xl p-4 border transition-all ${theme === 'dark' ? 'bg-purple-900/40 border-purple-800/30 focus-within:bg-purple-900/60 focus-within:border-purple-500' : 'bg-gray-50 border-gray-100 focus-within:bg-white focus-within:border-purple-200'}`}>
-                    <input 
-                      type="text" 
-                      placeholder="Apartment, suite, unit, etc."
-                      className={`bg-transparent border-none focus:ring-0 text-sm w-full font-bold ${theme === 'dark' ? 'text-white placeholder:text-purple-400/30' : 'text-gray-900 placeholder:text-gray-300'}`}
-                      value={guestForm.addressLine2}
-                      onChange={(e) => setGuestForm({...guestForm, addressLine2: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-5">
-                  <div className="space-y-2">
-                    <label className={`text-[9px] font-black uppercase tracking-widest px-1 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.cityLabel}</label>
-                    <input 
-                      placeholder="New York"
-                      className={`rounded-2xl p-4 border text-sm font-bold w-full focus:ring-0 transition-all ${theme === 'dark' ? 'bg-purple-900/40 border-purple-800/30 text-white placeholder:text-purple-400/30 focus:bg-purple-900/60 focus:border-purple-500' : 'bg-gray-50 border-gray-100 text-gray-900 placeholder:text-gray-300 focus:bg-white focus:border-purple-200'}`}
-                      value={guestForm.city}
-                      onChange={(e) => setGuestForm({...guestForm, city: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className={`text-[9px] font-black uppercase tracking-widest px-1 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.stateLabel}</label>
-                    <input 
-                      placeholder="NY"
-                      className={`rounded-2xl p-4 border text-sm font-bold w-full focus:ring-0 transition-all ${theme === 'dark' ? 'bg-purple-900/40 border-purple-800/30 text-white placeholder:text-purple-400/30 focus:bg-purple-900/60 focus:border-purple-500' : 'bg-gray-50 border-gray-100 text-gray-900 placeholder:text-gray-300 focus:bg-white focus:border-purple-200'}`}
-                      value={guestForm.state}
-                      onChange={(e) => setGuestForm({...guestForm, state: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className={`text-[9px] font-black uppercase tracking-widest px-1 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.zipLabel}</label>
-                    <input 
-                      placeholder="10001"
-                      className={`rounded-2xl p-4 border text-sm font-bold w-full focus:ring-0 transition-all ${theme === 'dark' ? 'bg-purple-900/40 border-purple-800/30 text-white placeholder:text-purple-400/30 focus:bg-purple-900/60 focus:border-purple-500' : 'bg-gray-50 border-gray-100 text-gray-900 placeholder:text-gray-300 focus:bg-white focus:border-purple-200'}`}
-                      value={guestForm.zipCode}
-                      onChange={(e) => setGuestForm({...guestForm, zipCode: e.target.value})}
                     />
                   </div>
                 </div>

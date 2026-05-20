@@ -32,11 +32,9 @@ const AddressList: React.FC<AddressListProps> = ({ lang, addresses, onAddAddress
     e.preventDefault();
     if (!formData.name.trim()) { setErrorHint(t.nameReq); return; }
     if (!formData.addressLine1.trim()) { setErrorHint(t.streetReq); return; }
-    if (!formData.city.trim()) { setErrorHint(t.cityReq); return; }
-    if (!formData.zipCode.trim()) { setErrorHint(t.zipReq); return; }
     if (!formData.phone.trim()) { setErrorHint(t.phoneReq); return; }
     
-    const formattedLocation = `${formData.addressLine1}, ${formData.city}, ${formData.state} ${formData.zipCode}, ${formData.country}`;
+    const formattedLocation = formData.addressLine1;
     
     onAddAddress({
       name: formData.name.trim(),
@@ -156,63 +154,6 @@ const AddressList: React.FC<AddressListProps> = ({ lang, addresses, onAddAddress
                     value={formData.addressLine1}
                     onChange={(e) => { setFormData({...formData, addressLine1: e.target.value}); setErrorHint(null); }}
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className={`text-[10px] font-black uppercase tracking-[0.2em] px-1 ${theme === 'dark' ? 'text-purple-400/40' : 'text-gray-400'}`}>{t.city}</label>
-                  <div className={`flex items-center rounded-2xl p-4 border transition-all ${theme === 'dark' ? 'bg-purple-900/20 border-purple-800/50 focus-within:border-purple-500 focus-within:bg-purple-900/40' : 'bg-gray-50 border-gray-100 focus-within:border-purple-500/50 focus-within:bg-white'}`}>
-                    <Building2 size={18} className={theme === 'dark' ? 'text-purple-500' : 'text-gray-400'} />
-                    <input 
-                      type="text" 
-                      placeholder="e.g. New York"
-                      className={`bg-transparent border-none focus:ring-0 text-sm w-full font-bold ml-3 ${theme === 'dark' ? 'text-white placeholder:text-purple-800' : 'text-gray-900 placeholder:text-gray-300'}`}
-                      value={formData.city}
-                      onChange={(e) => { setFormData({...formData, city: e.target.value}); setErrorHint(null); }}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className={`text-[10px] font-black uppercase tracking-[0.2em] px-1 ${theme === 'dark' ? 'text-purple-400/40' : 'text-gray-400'}`}>{t.state}</label>
-                  <div className={`flex items-center rounded-2xl p-4 border transition-all ${theme === 'dark' ? 'bg-purple-900/20 border-purple-800/50 focus-within:border-purple-500 focus-within:bg-purple-900/40' : 'bg-gray-50 border-gray-100 focus-within:border-purple-500/50 focus-within:bg-white'}`}>
-                    <Navigation size={18} className={theme === 'dark' ? 'text-purple-500' : 'text-gray-400'} />
-                    <input 
-                      type="text" 
-                      placeholder="e.g. NY"
-                      className={`bg-transparent border-none focus:ring-0 text-sm w-full font-bold ml-3 ${theme === 'dark' ? 'text-white placeholder:text-purple-800' : 'text-gray-900 placeholder:text-gray-300'}`}
-                      value={formData.state}
-                      onChange={(e) => { setFormData({...formData, state: e.target.value}); setErrorHint(null); }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className={`text-[10px] font-black uppercase tracking-[0.2em] px-1 ${theme === 'dark' ? 'text-purple-400/40' : 'text-gray-400'}`}>{t.zip}</label>
-                  <div className={`flex items-center rounded-2xl p-4 border transition-all ${theme === 'dark' ? 'bg-purple-900/20 border-purple-800/50 focus-within:border-purple-500 focus-within:bg-purple-900/40' : 'bg-gray-50 border-gray-100 focus-within:border-purple-500/50 focus-within:bg-white'}`}>
-                    <input 
-                      type="text" 
-                      placeholder="Code"
-                      className={`bg-transparent border-none focus:ring-0 text-sm w-full font-bold ml-1 ${theme === 'dark' ? 'text-white placeholder:text-purple-800' : 'text-gray-900 placeholder:text-gray-300'}`}
-                      value={formData.zipCode}
-                      onChange={(e) => { setFormData({...formData, zipCode: e.target.value}); setErrorHint(null); }}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className={`text-[10px] font-black uppercase tracking-[0.2em] px-1 ${theme === 'dark' ? 'text-purple-400/40' : 'text-gray-400'}`}>{t.country}</label>
-                  <div className={`flex items-center rounded-2xl p-4 border transition-all ${theme === 'dark' ? 'bg-purple-900/20 border-purple-800/50 focus-within:border-purple-500 focus-within:bg-purple-900/40' : 'bg-gray-50 border-gray-100 focus-within:border-purple-500/50 focus-within:bg-white'}`}>
-                    <Globe size={18} className={theme === 'dark' ? 'text-purple-500' : 'text-gray-400'} />
-                    <input 
-                      type="text" 
-                      placeholder="Country"
-                      className={`bg-transparent border-none focus:ring-0 text-sm w-full font-bold ml-3 ${theme === 'dark' ? 'text-white placeholder:text-purple-800' : 'text-gray-900 placeholder:text-gray-300'}`}
-                      value={formData.country}
-                      onChange={(e) => { setFormData({...formData, country: e.target.value}); setErrorHint(null); }}
-                    />
-                  </div>
                 </div>
               </div>
 

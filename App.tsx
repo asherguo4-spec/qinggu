@@ -136,8 +136,14 @@ const App: React.FC = () => {
     const initAuth = async () => {
       const forceEndLoading = setTimeout(() => setIsLoadingProfile(false), 2000);
       try {
-        await auth.authStateReady();
-        await handleAuthChange(auth.currentUser);
+        if (typeof auth.authStateReady === 'function') {
+           await (auth as any).authStateReady();
+           await handleAuthChange((auth as any).currentUser);
+        } else {
+           // Supabase path
+           const { data } = await auth.getSession();
+           await handleAuthChange(data?.session?.user ? { uid: data.session.user.id, email: data.session.user.email } : null);
+        }
       } catch (e) {
         console.warn("Auth initialization failed, using guest mode", e);
       } finally {
