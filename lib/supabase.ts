@@ -8,14 +8,25 @@ export const auth = supabase.auth;
 export const db = 'SUPABASE_MOCK';
 
 export const onAuthStateChanged = (authObj: any, callback: (user: any) => void) => {
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
     if (session?.user) {
       callback({ uid: session.user.id, email: session.user.email });
     } else {
       callback(null);
     }
   });
-  return () => {};
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (session?.user) {
+      callback({ uid: session.user.id, email: session.user.email });
+    } else {
+      callback(null);
+    }
+  });
+  
+  return () => {
+    subscription.unsubscribe();
+  };
 };
 
 export const signOut = (authObj: any) => supabase.auth.signOut();
