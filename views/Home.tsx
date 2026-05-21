@@ -96,7 +96,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
 
     if (isFavorited) {
       const snap = await getDocs(query(collection(db, 'favorites'), where('user_id', '==', userId), where('design_id', '==', lastResult.id)));
-      snap.forEach(d => deleteDoc(d.ref));
+      snap.forEach((d: any) => deleteDoc(d.ref));
       setIsFavorited(false);
     } else {
       // 1. First ensure the work is saved in the 'works' table so it can be retrieved later
@@ -140,7 +140,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
     if (isLiked) {
       // 取消点赞
       const snap = await getDocs(query(collection(db, 'likes'), where('user_id', '==', userId), where('design_id', '==', item.id)));
-      snap.forEach(d => deleteDoc(d.ref));
+      snap.forEach((d: any) => deleteDoc(d.ref));
       setLikedItems(prev => {
         const next = new Set(prev);
         next.delete(item.id);
@@ -203,7 +203,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
       try {
         // 查询 orders 表中已公开的作品
         const { docs: ordersDocs } = await getDocs(query(collection(db, 'orders'), where('status', '!=', 'pending'), where('is_public', '==', true), orderBy('status'), orderBy('created_at', 'desc'), limit(20)));
-        const ordersData = ordersDocs.map(d => ({id: d.id, ...d.data()}) as any);
+        const ordersData = ordersDocs.map((d: any) => ({id: d.id, ...d.data()}) as any);
 
         // 提取所有不重复的 user_id
         const userIds = Array.from(new Set((ordersData || []).map((w: any) => w.user_id).filter(Boolean)));
@@ -211,14 +211,18 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
         // 查询这些 user_id 对应的用户信息
         let usersMap: Record<string, any> = {};
         if (userIds.length > 0) {
-          // Chunk for firestore 'in' limits
+          // Chunk for firestore 'in' limits and format promises
+          const userPromises = [];
           for (let i = 0; i < userIds.length; i+=10) {
             const chunk = userIds.slice(i, i+10);
-            const { docs: userDocs } = await getDocs(query(collection(db, 'users'), where(documentId(), 'in', chunk)));
-            userDocs.forEach((u: any) => {
-              usersMap[u.id] = u.data();
-            });
+            userPromises.push(getDocs(query(collection(db, 'users'), where(documentId(), 'in', chunk))));
           }
+          const userResults = await Promise.all(userPromises);
+          userResults.forEach(result => {
+             result.docs.forEach((u: any) => {
+                usersMap[u.id] = u.data();
+             });
+          });
         }
 
         // 将数据拼装起来

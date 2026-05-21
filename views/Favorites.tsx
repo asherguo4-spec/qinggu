@@ -36,30 +36,26 @@ const Favorites: React.FC<FavoritesProps> = ({ lang, userId, setView, theme, onS
         return;
       }
 
-      const designIds = favSnap.docs.map(doc => doc.data().design_id);
+      const designIds = favSnap.docs.map((doc: any) => doc.data().design_id);
 
       // We need to fetch design details from 'works' and 'orders' collections
       // Since 'in' queries are limited to 10 items, we chunk them
       let worksData: any[] = [];
       let ordersData: any[] = [];
 
+      const workPromises = [];
+      const orderPromises = [];
       for (let i = 0; i < designIds.length; i += 10) {
         const chunk = designIds.slice(i, i + 10);
-        
-        try {
-          const wSnap = await getDocs(query(collection(db, 'works'), where('id', 'in', chunk)));
-          wSnap.forEach(d => worksData.push(d.data()));
-        } catch(e) {
-          console.error("Works fetch err:", e);
-        }
-
-        try {
-          const oSnap = await getDocs(query(collection(db, 'orders'), where(documentId(), 'in', chunk)));
-          oSnap.forEach(d => ordersData.push({ id: d.id, ...d.data() }));
-        } catch(e) {
-           console.error("Orders fetch err:", e);
-        }
+        workPromises.push(getDocs(query(collection(db, 'works'), where('id', 'in', chunk))).catch(e => { console.error("Works fetch err:", e); return { docs: [] as any[] }; }));
+        orderPromises.push(getDocs(query(collection(db, 'orders'), where(documentId(), 'in', chunk))).catch(e => { console.error("Orders fetch err:", e); return { docs: [] as any[] }; }));
       }
+      
+      const workResults = await Promise.all(workPromises);
+      const orderResults = await Promise.all(orderPromises);
+      
+      workResults.forEach(snap => snap.docs.forEach((d: any) => worksData.push(d.data())));
+      orderResults.forEach(snap => snap.docs.forEach((d: any) => ordersData.push({ id: d.id, ...d.data() })));
 
       const formattedWorksData = worksData.map((item: any) => ({
         id: item.id,
@@ -111,7 +107,7 @@ const Favorites: React.FC<FavoritesProps> = ({ lang, userId, setView, theme, onS
     e.stopPropagation();
     try {
       const snap = await getDocs(query(collection(db, 'favorites'), where('user_id', '==', userId), where('design_id', '==', designId)));
-      snap.forEach(d => deleteDoc(d.ref));
+      snap.forEach((d: any) => deleteDoc(d.ref));
       setFavorites(favorites.filter(f => f.id !== designId));
     } catch (err: any) {
       console.error(err);

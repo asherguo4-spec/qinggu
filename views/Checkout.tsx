@@ -4,7 +4,7 @@ import { ChevronLeft, MapPin, CheckCircle2, ShieldCheck, Mail, Globe, Lock, Load
 import { GeneratedCreation, Address, AppView } from '../types';
 import { uploadImage, db } from '../lib/supabase';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc, onSnapshot } from '../lib/supabase';
-import { auth } from '../lib/supabase';
+import { auth, supabase } from '../lib/supabase';
 import { aiService } from '../services/aiService';
 import { translations, LanguageCode } from '../translations';
 
@@ -27,10 +27,10 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   const isGuest = !userId;
   
   const formRef = useRef({
-    email: '',
     name: '',
     phone: '',
     addressLine1: '',
+    addressLine2: '',
     city: '',
     state: '',
     zipCode: '',
@@ -39,7 +39,6 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   });
 
   const [guestForm, setGuestForm] = useState({
-    email: '',
     name: '',
     phone: '',
     addressLine1: '',
@@ -59,7 +58,6 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   const [isShared, setIsShared] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [guestEmailForOrder, setGuestEmailForOrder] = useState<string>('');
   const [isFormValid, setIsFormValid] = useState(false);
   const [isSdkLoading, setIsSdkLoading] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -93,7 +91,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
     try {
       if (isFavorited) {
         const snap = await getDocs(query(collection(db, 'favorites'), where('user_id', '==', userId), where('design_id', '==', creation.id)));
-        snap.forEach(d => deleteDoc(d.ref));
+        snap.forEach((d: any) => deleteDoc(d.ref));
         setIsFavorited(false);
       } else {
         // Ensure work is saved
@@ -142,7 +140,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
     const validate = () => {
       if (isGuest) {
         return (
-          guestForm.email.includes('@') &&
+          guestForm.phone.trim().length > 5 &&
           guestForm.name.trim().length > 0 &&
           guestForm.addressLine1.trim().length > 0
         );
@@ -156,7 +154,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
   const validateForm = () => {
     const data = formRef.current;
     if (isGuest) {
-      if (!data.email.includes('@')) return t.validateEmail;
+      if (!data.phone.trim()) return lang === 'zh' ? '请输入手机号' : 'Please enter your phone number';
       if (!data.name.trim()) return t.validateName;
       if (!data.addressLine1.trim()) return t.validateStreet;
     } else if (!data.selectedAddressId) {
@@ -198,7 +196,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
       // 2. 准备订单数据，使用上传后的 URL
       const orderPayload = sanitize({
         user_id: userId,
-        guest_email: isGuest ? data.email.trim() : null,
+        guest_phone: isGuest ? data.phone.trim() : null,
         title: creation.title,
         prompt: creation.prompt,
         style: creation.style,
@@ -209,7 +207,6 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
         preview_images: imageUrls, 
         payment_id: details.id,
         shipping_info: isGuest ? {
-          email: data.email,
           name: data.name,
           phone: data.phone,
           addressLine1: data.addressLine1,
@@ -318,7 +315,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
         </div>
 
         <button 
-          onClick={() => onPaymentComplete(creation.id, isGuest ? formRef.current.email : undefined)}
+          onClick={() => onPaymentComplete(creation.id, isGuest ? formRef.current.phone : undefined)}
           className="group flex flex-col items-center space-y-4 active:scale-95 transition-all"
         >
            <div className="flex space-x-2">
@@ -393,20 +390,6 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
             
             {isGuest ? (
               <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className={`text-[9px] font-black uppercase tracking-widest px-1 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.emailLabel}</label>
-                  <div className={`flex items-center rounded-2xl p-4 border transition-all ${theme === 'dark' ? 'bg-purple-900/40 border-purple-800/30 focus-within:bg-purple-900/60 focus-within:border-purple-500' : 'bg-gray-50 border-gray-100 focus-within:bg-white focus-within:border-purple-200'}`}>
-                    <Mail size={18} className="text-gray-300 mr-3" />
-                    <input 
-                      type="email" 
-                      placeholder="email@example.com"
-                      className={`bg-transparent border-none focus:ring-0 text-sm w-full font-bold ${theme === 'dark' ? 'text-white placeholder:text-purple-400/30' : 'text-gray-900 placeholder:text-gray-300'}`}
-                      value={guestForm.email}
-                      onChange={(e) => setGuestForm({...guestForm, email: e.target.value})}
-                    />
-                  </div>
-                </div>
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className={`text-[9px] font-black uppercase tracking-widest px-1 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>{t.nameLabel}</label>
@@ -571,9 +554,9 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                         try {
                           const data = formRef.current;
                           
-                          let userEmail = data.email;
+                          let userEmail = '';
                           if (!isGuest) {
-                            const { data: userData } = await supabase.auth.getUser();
+                            const { data: userData } = await auth.getUser();
                             userEmail = userData?.user?.email || '';
                           }
 
@@ -590,7 +573,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
 
                           const orderPayload = {
                             user_id: userId,
-                            guest_email: userEmail,
+                            guest_phone: isGuest ? data.phone.trim() : null,
                             title: creation.title,
                             prompt: creation.prompt,
                             style: creation.style,
@@ -600,7 +583,6 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
                             story_card: creation.storyCard || null,
                             preview_images: imageUrls.length > 0 ? imageUrls : creation.imageUrls,
                             shipping_info: isGuest ? {
-                              email: data.email,
                               name: data.name,
                               phone: data.phone,
                               addressLine1: data.addressLine1,
@@ -615,11 +597,10 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
 
                           const docRef = await addDoc(collection(db, 'orders'), orderPayload);
                           setOrderId(docRef.id);
-                          setGuestEmailForOrder(userEmail);
                           
                           setIsSuccess(true);
                           setTimeout(() => {
-                            onPaymentComplete(creation.id, userEmail);
+                            onPaymentComplete(creation.id, isGuest ? data.phone : userEmail);
                           }, 1500);
 
                         } catch (error: any) {

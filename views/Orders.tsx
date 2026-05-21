@@ -20,23 +20,28 @@ const Orders: React.FC<OrdersProps> = ({ lang, userId, creations, setView, theme
   const [dbOrders, setDbOrders] = useState<GeneratedCreation[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [guestPhone, setGuestPhone] = useState('');
+  const [isGuestSearching, setIsGuestSearching] = useState(false);
+  const [hasSearchedGuest, setHasSearchedGuest] = useState(false);
 
-  const fetchOrders = async () => {
-    if (!userId || userId === 'null' || userId === '') {
+  const fetchOrders = async (phoneToSearch?: string) => {
+    if (!userId && !phoneToSearch) {
       setLoading(false);
       return;
     }
     setLoading(true);
     setFetchError(null);
     try {
-      const q = query(
-        collection(db, 'orders'),
-        where('user_id', '==', userId)
-      );
+      let q;
+      if (userId) {
+        q = query(collection(db, 'orders'), where('user_id', '==', userId));
+      } else {
+        q = query(collection(db, 'orders'), where('guest_phone', '==', phoneToSearch));
+      }
       const snap = await getDocs(q);
 
-      let data = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      let data = snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as any));
+      data.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       const mappedData: GeneratedCreation[] = (data || [])
         .filter((item: any) => item.status !== 'pending')
@@ -56,14 +61,33 @@ const Orders: React.FC<OrdersProps> = ({ lang, userId, creations, setView, theme
       }));
 
       setDbOrders(mappedData);
+      if (!userId && phoneToSearch) {
+        setHasSearchedGuest(true);
+      }
     } catch (err: any) {
-      setFetchError(lang === 'zh' ? "订单同步异常" : "Order sync error");
+      setFetchError(lang === 'zh' ? "订单查询异常" : "Order sync error");
     } finally {
       setLoading(false);
+      setIsGuestSearching(false);
     }
   };
 
-  useEffect(() => { fetchOrders(); }, [userId]);
+  useEffect(() => { 
+    if (userId) {
+      fetchOrders(); 
+    } else {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  const handleGuestSearch = () => {
+    if (guestPhone.trim().length < 6) {
+      alert(lang === 'zh' ? '请输入完整的手机号' : 'Please enter a valid phone number');
+      return;
+    }
+    setIsGuestSearching(true);
+    fetchOrders(guestPhone.trim());
+  };
 
   const combinedOrders = [...dbOrders];
   const existingIds = new Set(combinedOrders.map(o => o.id));
@@ -107,17 +131,63 @@ const Orders: React.FC<OrdersProps> = ({ lang, userId, creations, setView, theme
             <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${theme === 'dark' ? 'text-purple-400/60' : 'text-gray-400'}`}>{t.manage}</p>
           </div>
         </div>
-        <button 
-          onClick={fetchOrders} 
-          disabled={loading}
-          className={`p-3 rounded-full active:rotate-180 transition-all shadow-sm border ${theme === 'dark' ? 'bg-purple-900/40 text-purple-300 border-purple-800/50' : 'bg-white text-slate-400 border-gray-100'} ${loading ? 'opacity-30' : 'hover:bg-gray-50'}`}
-        >
-          <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center space-x-2">
+          {(!userId && hasSearchedGuest) && (
+            <button
+              onClick={() => {
+                setHasSearchedGuest(false);
+                setGuestPhone('');
+                setDbOrders([]);
+              }}
+              className={`p-3 rounded-full active:scale-95 transition-all shadow-sm border flex items-center space-x-2 ${theme === 'dark' ? 'bg-purple-900/40 text-purple-300 border-purple-800/50' : 'bg-white text-slate-400 border-gray-100'} hover:bg-gray-50`}
+            >
+              <span className="text-xs font-bold px-2">{lang === 'zh' ? '重新查询' : 'Reset'}</span>
+            </button>
+          )}
+          <button 
+            onClick={() => userId ? fetchOrders() : (guestPhone && fetchOrders(guestPhone))} 
+            disabled={loading || (!userId && !hasSearchedGuest)}
+            className={`p-3 rounded-full active:rotate-180 transition-all shadow-sm border ${theme === 'dark' ? 'bg-purple-900/40 text-purple-300 border-purple-800/50' : 'bg-white text-slate-400 border-gray-100'} ${loading || (!userId && !hasSearchedGuest) ? 'opacity-30' : 'hover:bg-gray-50'}`}
+          >
+            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-        {combinedOrders.length === 0 ? (
+        {(!userId && !hasSearchedGuest) ? (
+          <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-700">
+            <div className={`w-20 h-20 rounded-[28px] flex items-center justify-center mb-6 border shadow-sm ${theme === 'dark' ? 'bg-purple-900/20 border-purple-800/30' : 'bg-white border-gray-50'}`}>
+              <SearchX size={32} className={theme === 'dark' ? 'text-purple-700' : 'text-gray-200'} />
+            </div>
+            <h3 className={`text-xl font-black mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{lang === 'zh' ? '游客查单' : 'Guest Track Order'}</h3>
+            <p className={`text-xs mb-8 text-center max-w-[260px] leading-relaxed ${theme === 'dark' ? 'text-purple-300/60' : 'text-gray-400'}`}>
+              {lang === 'zh' ? '未登录用户请输入下单时预留的手机号进行查单' : 'Enter the phone number you used during guest checkout to parse your order.'}
+            </p>
+            <div className="w-full max-w-sm px-4 space-y-4">
+              <input
+                type="tel"
+                value={guestPhone}
+                onChange={(e) => setGuestPhone(e.target.value)}
+                placeholder={lang === 'zh' ? '请输入手机号' : 'Enter phone number'}
+                className={`w-full p-4 rounded-2xl border text-sm font-bold text-center transition-colors ${theme === 'dark' ? 'bg-purple-900/40 border-purple-800/30 text-white placeholder:text-purple-500/30' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-300'}`}
+              />
+              <button 
+                onClick={handleGuestSearch}
+                disabled={isGuestSearching || guestPhone.length < 5}
+                className={`w-full py-4 rounded-2xl border font-black text-sm active:scale-95 transition-all shadow-sm flex items-center justify-center space-x-2 ${theme === 'dark' ? 'bg-purple-600 text-white border-purple-500 hover:bg-purple-500' : 'bg-gray-900 border-gray-900 text-white hover:bg-gray-800'} disabled:opacity-50 text-white`}
+              >
+                {isGuestSearching ? <Loader2 size={18} className="animate-spin" /> : <SearchX size={18} />}
+                <span>{lang === 'zh' ? '查单' : 'Track'}</span>
+              </button>
+              <div className="text-center pt-4">
+                 <button onClick={() => setView(AppView.REGISTER)} className={`text-[11px] font-bold underline transition-colors ${theme === 'dark' ? 'text-purple-400 hover:text-purple-300' : 'text-gray-500 hover:text-gray-800'}`}>
+                   {lang === 'zh' ? '已有账号？去登录' : 'Have an account? Login'}
+                 </button>
+              </div>
+            </div>
+          </div>
+        ) : combinedOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 animate-in fade-in duration-700">
             <div className={`w-24 h-24 rounded-[32px] flex items-center justify-center mb-6 border shadow-sm ${theme === 'dark' ? 'bg-purple-900/20 border-purple-800/30' : 'bg-white border-gray-50'}`}>
               <SearchX size={40} className={theme === 'dark' ? 'text-purple-700' : 'text-gray-200'} />
@@ -125,10 +195,18 @@ const Orders: React.FC<OrdersProps> = ({ lang, userId, creations, setView, theme
             <h3 className={`text-xl font-black mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{t.emptyTitle}</h3>
             <p className={`text-xs mb-8 ${theme === 'dark' ? 'text-purple-300/60' : 'text-gray-400'}`}>{t.emptySub}</p>
             <button 
-              onClick={() => setView(userId ? AppView.HOME : AppView.REGISTER)} 
+              onClick={() => {
+                if (!userId) {
+                  setHasSearchedGuest(false);
+                  setGuestPhone('');
+                  setDbOrders([]);
+                } else {
+                  setView(AppView.HOME);
+                }
+              }} 
               className={`px-8 py-4 rounded-2xl border font-black text-sm active:scale-95 transition-all shadow-sm ${theme === 'dark' ? 'bg-purple-600 text-white border-purple-500' : 'bg-white border-purple-100 text-purple-600'}`}
             >
-              {userId ? t.emptyBtn : (t as any).loginBtn}
+              {!userId ? (lang === 'zh' ? '重新查询' : 'Search Again') : t.emptyBtn}
             </button>
           </div>
         ) : (

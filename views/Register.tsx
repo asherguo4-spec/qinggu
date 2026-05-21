@@ -34,20 +34,15 @@ const Register: React.FC<RegisterProps> = ({ lang, onRegisterSuccess, onBack, th
     
     let isNewUser = false;
     try {
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("请求超时：数据库可能处于休眠状态，请联系管理员唤醒。")), 15000)
-      );
-
       let finalUserId: string = '';
       let finalNickname = nickname.trim();
       let existingAvatar: string | null = null;
       let existingBio: string | null = null;
 
       if (isLoginMode) {
-        const authPromise = signInWithEmailAndPassword(auth, email.trim(), password.trim())
+        const { data, error } = await signInWithEmailAndPassword(auth, email.trim(), password.trim())
             .then(cred => ({ data: { user: cred.user }, error: null }))
-            .catch(error => ({ data: null, error }));
-        const { data, error } = await Promise.race([authPromise, timeoutPromise]) as any;
+            .catch(err => ({ data: null, error: err }));
         
         if (error) throw error;
         if (!data?.user) throw new Error("登录失败：未获取到用户信息。");
@@ -70,12 +65,14 @@ const Register: React.FC<RegisterProps> = ({ lang, onRegisterSuccess, onBack, th
           return;
         }
 
-        const signUpPromise = createUserWithEmailAndPassword(auth, email.trim(), password.trim()).then(cred => ({ data: { user: cred.user }, error: null })).catch(error => ({ data: null, error }));
-        const { data, error: signUpError } = await Promise.race([signUpPromise, timeoutPromise]) as any;
+        const { data, error: signUpError } = await createUserWithEmailAndPassword(auth, email.trim(), password.trim())
+            .then(cred => ({ data: { user: cred.user }, error: null }))
+            .catch(err => ({ data: null, error: err }));
         
         if (signUpError) {
-          const loginPromise = signInWithEmailAndPassword(auth, email.trim(), password.trim()).then(cred => ({ data: { user: cred.user }, error: null })).catch(error => ({ data: null, error }));
-          const { data: loginData, error: loginError } = await Promise.race([loginPromise, timeoutPromise]) as any;
+          const { data: loginData, error: loginError } = await signInWithEmailAndPassword(auth, email.trim(), password.trim())
+              .then(cred => ({ data: { user: cred.user }, error: null }))
+              .catch(err => ({ data: null, error: err }));
           
           if (loginError) throw signUpError;
           if (!loginData?.user) throw new Error("登录失败：未获取到用户信息。");
@@ -89,7 +86,7 @@ const Register: React.FC<RegisterProps> = ({ lang, onRegisterSuccess, onBack, th
           }
           setSuccessMsg(t.successLogin);
         } else {
-          if (!data?.user) throw new Error("注册失败：请检查邮箱是否需要验证，或联系管理员。");
+          if (!data?.user?.uid) throw new Error("注册失败：请检查邮箱是否需要验证，或联系管理员。");
           finalUserId = data.user.uid;
           isNewUser = true;
           setSuccessMsg(t.successReg);
@@ -97,62 +94,64 @@ const Register: React.FC<RegisterProps> = ({ lang, onRegisterSuccess, onBack, th
       }
 
       if (finalUserId) {
-        // 1. Create User Profile
-        await setDoc(doc(db, 'users', finalUserId), {
-          id: finalUserId,
-          nickname: finalNickname || (lang === 'zh' ? '造物主' : 'Creator'),
-          avatar: existingAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${finalNickname || finalUserId}`,
-          bio: existingBio || (lang === 'zh' ? '欢迎来到造物世界' : 'Welcome to the Forge')
-        }, { merge: true });
+        // Fire and forget updating user profile and notifications to save time
+        Promise.all([
+          setDoc(doc(db, 'users', finalUserId), {
+            id: finalUserId,
+            nickname: finalNickname || (lang === 'zh' ? '造物主' : 'Creator'),
+            avatar: existingAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${finalNickname || finalUserId}`,
+            bio: existingBio || (lang === 'zh' ? '欢迎来到造物世界' : 'Welcome to the Forge')
+          }, { merge: true }),
+          (async () => {
+            const notificationsRef = collection(db, 'notifications');
+            if (isNewUser) {
+              const welcomeQuery = query(notificationsRef, where('target_user_id', '==', finalUserId), where('title', 'in', [
+                lang === 'zh' ? '欢迎来到 selindell' : 'Welcome to selindell',
+                '欢迎来到 selindell',
+                'Welcome to selindell'
+              ]));
+              const welcomeSnap = await getDocs(welcomeQuery);
+              if (welcomeSnap.empty) {
+                await addDoc(notificationsRef, {
+                  target_user_id: finalUserId,
+                  title: lang === 'zh' ? '欢迎来到 selindell' : 'Welcome to selindell',
+                  content: lang === 'zh' ? '你好造物主，欢迎来到 selindell！在这里开启你的创作之旅。' : 'Hello Creator, welcome to selindell! Start your creative journey here.',
+                  is_active: true,
+                  is_read: false,
+                  created_at: new Date().toISOString()
+                });
+              }
+            } else {
+              const backQuery = query(notificationsRef, 
+                where('target_user_id', '==', finalUserId), 
+                where('title', 'in', [lang === 'zh' ? '欢迎回来' : 'Welcome back', '欢迎回来', 'Welcome back'])
+              );
+              const backSnap = await getDocs(backQuery);
+              const recentBack = backSnap.docs.some((doc: any) => {
+                const data = doc.data();
+                if (!data.created_at) return false;
+                const diff = Date.now() - new Date(data.created_at).getTime();
+                return diff < 12 * 60 * 60 * 1000;
+              });
 
-        // 2. Welcome Notification (Smarter Logic)
-        const notificationsRef = collection(db, 'notifications');
-        const welcomeQuery = query(notificationsRef, where('target_user_id', '==', finalUserId), where('title', 'in', [
-          lang === 'zh' ? '欢迎来到 selindell' : 'Welcome to selindell',
-          '欢迎来到 selindell',
-          'Welcome to selindell'
-        ]));
-        const welcomeSnap = await getDocs(welcomeQuery);
-        
-        if (isNewUser && welcomeSnap.empty) {
-          await addDoc(notificationsRef, {
-            target_user_id: finalUserId,
-            title: lang === 'zh' ? '欢迎来到 selindell' : 'Welcome to selindell',
-            content: lang === 'zh' ? '你好造物主，欢迎来到 selindell！在这里开启你的创作之旅。' : 'Hello Creator, welcome to selindell! Start your creative journey here.',
-            is_active: true,
-            is_read: false,
-            created_at: new Date().toISOString()
-          });
-        } else if (!isNewUser) {
-          // Check if we already sent a "Welcome back" very recently (e.g., in the last 12 hours)
-          const backQuery = query(notificationsRef, 
-            where('target_user_id', '==', finalUserId), 
-            where('title', 'in', [lang === 'zh' ? '欢迎回来' : 'Welcome back', '欢迎回来', 'Welcome back'])
-          );
-          const backSnap = await getDocs(backQuery);
-          const recentBack = backSnap.docs.some(doc => {
-            const data = doc.data();
-            if (!data.created_at) return false;
-            const diff = Date.now() - new Date(data.created_at).getTime();
-            return diff < 12 * 60 * 60 * 1000; // 12 hours
-          });
-
-          if (!recentBack) {
-            await addDoc(notificationsRef, {
-              target_user_id: finalUserId,
-              title: lang === 'zh' ? '欢迎回来' : 'Welcome back',
-              content: lang === 'zh' ? '很高兴再次见到你，造物主！准备好开始新的创作了吗？' : 'Great to see you again, Creator! Ready for something new?',
-              is_active: true,
-              is_read: false,
-              created_at: new Date().toISOString()
-            });
-          }
-        }
+              if (!recentBack) {
+                await addDoc(notificationsRef, {
+                  target_user_id: finalUserId,
+                  title: lang === 'zh' ? '欢迎回来' : 'Welcome back',
+                  content: lang === 'zh' ? '很高兴再次见到你，造物主！准备好开始新的创作了吗？' : 'Great to see you again, Creator! Ready for something new?',
+                  is_active: true,
+                  is_read: false,
+                  created_at: new Date().toISOString()
+                });
+              }
+            }
+          })()
+        ]).catch(e => console.warn('Background updates failed', e));
       }
       
       setTimeout(() => {
         onRegisterSuccess(finalNickname);
-      }, 1500);
+      }, 400);
 
     } catch (err: any) {
       setErrorHint(err.message);

@@ -45,11 +45,11 @@ const Messages: React.FC<MessagesProps> = ({ lang, theme, userId, onRead }) => {
       );
       // Wait, firestore orderBy limitations with inequality. Let's just fetch by target_user_id and filter internally.
       const snap = await getDocs(query(collection(db, 'notifications'), where('target_user_id', '==', userId)));
-      let data = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      data = data.filter(d => d.is_active !== false);
+      let data = snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as any));
+      data = data.filter((d: any) => d.is_active !== false);
       
       // Robust sorting: handle missing timestamps by putting them at the end
-      data.sort((a, b) => {
+      data.sort((a: any, b: any) => {
         const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
         const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
         return timeB - timeA;

@@ -30,7 +30,7 @@ const Square: React.FC = () => {
         );
         const ordersSnap = await getDocs(q);
 
-        const ordersData = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+        const ordersData = ordersSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() as any }));
 
         const userIds = Array.from(new Set(ordersData.map((o: any) => o.user_id).filter(Boolean)));
         let usersMap: Record<string, any> = {};
@@ -41,7 +41,7 @@ const Square: React.FC = () => {
             const chunk = userIds.slice(i, i + 10);
             const userQ = query(collection(db, 'users'), where('__name__', 'in', chunk));
             const usersSnap = await getDocs(userQ);
-            usersSnap.forEach(uSnap => {
+            usersSnap.forEach((uSnap: any) => {
               usersMap[uSnap.id] = { id: uSnap.id, ...uSnap.data() };
             });
           }

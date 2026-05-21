@@ -13,7 +13,7 @@ import SettingsView from './views/Settings';
 import Register from './views/Register';
 import AboutUs from './views/AboutUs';
 import OrderDetail from './views/OrderDetail';
-import { auth, db, logAction } from './lib/supabase';
+import { auth, db, logAction, supabase } from './lib/supabase';
 import { onAuthStateChanged, signOut } from './lib/supabase';
 import { collection, query, where, getDocs, getDoc, doc, setDoc, deleteDoc, addDoc, count, updateDoc } from './lib/supabase';
 import { translations, LanguageCode } from './translations';
@@ -203,12 +203,17 @@ const App: React.FC = () => {
       const uid = user.uid;
       setUserId(uid);
       
-      const ordersSnap = await getDocs(query(collection(db, 'orders'), where('user_id', '==', uid)));
+      const [ordersSnap, profileSnap, addrSnap, notifsSnap] = await Promise.all([
+        getDocs(query(collection(db, 'orders'), where('user_id', '==', uid))),
+        getDoc(doc(db, 'users', uid)),
+        getDocs(query(collection(db, 'addresses'), where('user_id', '==', uid))),
+        getDocs(query(collection(db, 'notifications'), where('target_user_id', '==', uid), where('is_active', '!=', false))).catch(() => ({ docs: [] as any[] }))
+      ]);
+
       const currentOrderCount = ordersSnap.size || 0;
       setOrderCount(currentOrderCount);
       const level: UserLevel = currentOrderCount > 0 ? 'elite' : 'creator';
       
-      const profileSnap = await getDoc(doc(db, 'users', uid));
       const profileData = profileSnap.data();
 
       if (profileSnap.exists() && profileData) {
@@ -231,18 +236,16 @@ const App: React.FC = () => {
         });
       }
 
-      const addrSnap = await getDocs(query(collection(db, 'addresses'), where('user_id', '==', uid)));
       if (!addrSnap.empty) {
-        setAddresses(addrSnap.docs.map((d) => ({
+        setAddresses(addrSnap.docs.map((d: any) => ({
           id: d.id, userId: d.data().user_id, name: d.data().name, phone: d.data().phone, location: d.data().location, isDefault: d.data().is_default
         })));
       }
 
       // Fetch unread notifications count
       try {
-        const notifsSnap = await getDocs(query(collection(db, 'notifications'), where('target_user_id', '==', uid), where('is_active', '!=', false)));
         const readNotifs = JSON.parse(localStorage.getItem('read_notifications') || '[]');
-        const actualUnread = notifsSnap.docs.filter(n => !n.data().is_read && !readNotifs.includes(n.id));
+        const actualUnread = notifsSnap.docs.filter((n: any) => n.data && typeof n.data === 'function' ? (!n.data().is_read && !readNotifs.includes(n.id)) : false);
         setUnreadMessages(actualUnread.length);
       } catch (e) {
         setUnreadMessages(0);
@@ -256,8 +259,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleRegisterSuccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const handleRegisterSuccess = async () => {
+    const { data: { user } } = await auth.getUser();
     await handleAuthChange(user ? { uid: user.id, email: user.email } : null);
     if (pendingOrder) setCurrentView(AppView.RESULT);
     else setCurrentView(AppView.PROFILE);
@@ -287,7 +290,7 @@ const App: React.FC = () => {
       // We need to fetch the doc ID to delete it
       getDocs(query(collection(db, 'favorites'), where('user_id', '==', userId), where('design_id', '==', creationId)))
         .then(snap => {
-           snap.forEach(docSnap => deleteDoc(docSnap.ref));
+           snap.forEach((docSnap: any) => deleteDoc(docSnap.ref));
         });
     }
     setPendingOrder(null);

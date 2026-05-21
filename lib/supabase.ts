@@ -61,7 +61,7 @@ export const getDocs = async (q: any) => {
     };
   }
 
-  let builder = supabase.from(q.colName).select('*');
+  let builder: any = supabase.from(q.colName).select('*');
   for (let arg of q.args) {
     if (arg.type === 'where') {
       if (arg.op === '==') builder = builder.eq(arg.field, arg.val);
