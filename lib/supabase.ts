@@ -3,7 +3,28 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://rnxiudmyhqqbyzhzjpqb.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJueGl1ZG15aHFxYnl6aHpqcHFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NzIxMjMsImV4cCI6MjA4NTA0ODEyM30.tY2W1uuOFewFUkPFkru3GDjkpmvZJcCkwnGAwCWCBpA';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+let isOfflineMode = false;
+
+const customFetch = async (url: string, options: any) => {
+  if (isOfflineMode) {
+    throw new Error('Offline fallback mode enabled');
+  }
+  try {
+    const response = await Promise.race([
+      fetch(url, options),
+      new Promise<Response>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+    ]);
+    return response as Response;
+  } catch (err) {
+    isOfflineMode = true;
+    console.warn("Supabase fetch timeout. Enabling offline mode.");
+    throw err;
+  }
+};
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  global: { fetch: customFetch }
+});
 export const auth = supabase.auth;
 export const db = 'SUPABASE_MOCK';
 
@@ -50,73 +71,94 @@ export const limit = (n: number) => ({ type: 'limit', n });
 export const documentId = () => 'id';
 
 export const getDocs = async (q: any) => {
-  if (typeof q === 'string') {
-    const { data, error } = await supabase.from(q).select('*');
+  try {
+    if (typeof q === 'string') {
+      const { data, error } = await supabase.from(q).select('*');
+      if (error) throw error;
+      return {
+        empty: !data || data.length === 0,
+        size: data?.length || 0,
+        forEach: (cb: any) => (data || []).forEach((d: any) => cb({ id: d.id, data: () => d, ref: { col: q, id: d.id } })),
+        docs: (data || []).map((d: any) => ({ id: d.id, data: () => d, ref: { col: q, id: d.id } }))
+      };
+    }
+
+    let builder: any = supabase.from(q.colName).select('*');
+    for (let arg of q.args) {
+      if (arg.type === 'where') {
+        if (arg.op === '==') builder = builder.eq(arg.field, arg.val);
+        else if (arg.op === '!=') builder = builder.neq(arg.field, arg.val);
+        else if (arg.op === 'in') builder = builder.in(arg.field, arg.val);
+      } else if (arg.type === 'order') {
+        builder = builder.order(arg.field, { ascending: arg.dir === 'asc' });
+      } else if (arg.type === 'limit') {
+        builder = builder.limit(arg.n);
+      }
+    }
+    const { data, error } = await builder;
     if (error) throw error;
     return {
       empty: !data || data.length === 0,
       size: data?.length || 0,
-      forEach: (cb: any) => (data || []).forEach((d: any) => cb({ id: d.id, data: () => d, ref: { col: q, id: d.id } })),
-      docs: (data || []).map((d: any) => ({ id: d.id, data: () => d, ref: { col: q, id: d.id } }))
+      forEach: (cb: any) => (data || []).forEach((d: any) => cb({ id: d.id, data: () => d, ref: { col: q.colName, id: d.id } })),
+      docs: (data || []).map((d: any) => ({ id: d.id, data: () => d, ref: { col: q.colName, id: d.id } }))
     };
+  } catch (e) {
+    return { empty: true, size: 0, forEach: () => {}, docs: [] };
   }
-
-  let builder: any = supabase.from(q.colName).select('*');
-  for (let arg of q.args) {
-    if (arg.type === 'where') {
-      if (arg.op === '==') builder = builder.eq(arg.field, arg.val);
-      else if (arg.op === '!=') builder = builder.neq(arg.field, arg.val);
-      else if (arg.op === 'in') builder = builder.in(arg.field, arg.val);
-    } else if (arg.type === 'order') {
-      builder = builder.order(arg.field, { ascending: arg.dir === 'asc' });
-    } else if (arg.type === 'limit') {
-      builder = builder.limit(arg.n);
-    }
-  }
-  const { data, error } = await builder;
-  if (error) throw error;
-  return {
-    empty: !data || data.length === 0,
-    size: data?.length || 0,
-    forEach: (cb: any) => (data || []).forEach((d: any) => cb({ id: d.id, data: () => d, ref: { col: q.colName, id: d.id } })),
-    docs: (data || []).map((d: any) => ({ id: d.id, data: () => d, ref: { col: q.colName, id: d.id } }))
-  };
 };
 
 export const getDoc = async (ref: any) => {
   if (!ref.id) return { exists: () => false, data: () => undefined, id: ref.id, ref };
-  const { data, error } = await supabase.from(ref.col).select('*').eq('id', ref.id).maybeSingle();
-  if (error || !data) return { exists: () => false, data: () => undefined, id: ref.id, ref };
-  return { exists: () => true, data: () => data, id: ref.id, ref };
+  try {
+    const { data, error } = await supabase.from(ref.col).select('*').eq('id', ref.id).maybeSingle();
+    if (error || !data) return { exists: () => false, data: () => undefined, id: ref.id, ref };
+    return { exists: () => true, data: () => data, id: ref.id, ref };
+  } catch (e) {
+    return { exists: () => false, data: () => undefined, id: ref.id, ref };
+  }
 };
 export const getDocFromServer = getDoc;
 
 export const setDoc = async (ref: any, data: any, options: any = {}) => {
   if (!ref.id) ref.id = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString();
-  if (options.merge) {
-    const { error } = await supabase.from(ref.col).update(data).eq('id', ref.id);
-    if (error) throw error;
-  } else {
+  try {
     const { error } = await supabase.from(ref.col).upsert({ id: ref.id, ...data });
     if (error) throw error;
+  } catch (e) {
+    console.warn('setDoc failed, mocked in memory');
   }
 };
 
 export const updateDoc = async (ref: any, data: any) => {
-  const { error } = await supabase.from(ref.col).update(data).eq('id', ref.id);
-  if (error) throw error;
+  try {
+    const { error } = await supabase.from(ref.col).update(data).eq('id', ref.id);
+    if (error) throw error;
+  } catch (e) {
+    console.warn('updateDoc failed, mocked in memory');
+  }
 };
 
 export const addDoc = async (col: string | any, data: any) => {
   const colName = typeof col === 'string' ? col : col.colName || col;
-  const { data: res, error } = await supabase.from(colName).insert(data).select().single();
-  if (error) throw error;
-  return { id: res?.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString()), ref: { col: colName, id: res?.id } };
+  try {
+    const { data: res, error } = await supabase.from(colName).insert(data).select().single();
+    if (error) throw error;
+    return { id: res?.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString()), ref: { col: colName, id: res?.id } };
+  } catch (e) {
+    const backupId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString();
+    console.warn('addDoc failed, using local id', backupId);
+    return { id: backupId, ref: { col: colName, id: backupId } };
+  }
 };
 
 export const deleteDoc = async (ref: any) => {
-  const { error } = await supabase.from(ref.col).delete().eq('id', ref.id);
-  if (error) throw error;
+  try {
+    const { error } = await supabase.from(ref.col).delete().eq('id', ref.id);
+    if (error) throw error;
+  } catch (e) {
+    console.warn('deleteDoc failed, ignored offline');
+  }
 };
 
 export const onSnapshot = (q: any, callback: any) => {

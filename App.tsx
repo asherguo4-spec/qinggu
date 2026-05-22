@@ -153,10 +153,10 @@ const App: React.FC = () => {
   const getDefaultProfile = (id: string | null): UserProfile => ({
     id: id || '',
     shortId: generateShortId(id || ''),
-    nickname: id ? (lang === 'zh' ? '加载中...' : 'Loading...') : (lang === 'zh' ? '欢迎' : 'Welcome'),
+    nickname: id ? (lang === 'zh' ? '造物主' : 'Creator') : (lang === 'zh' ? '欢迎' : 'Welcome'),
     avatar: getRandomAvatar(id || undefined),
     email: '',
-    bio: id ? (lang === 'zh' ? '正在获取用户信息...' : 'Fetching profile...') : (lang === 'zh' ? '探索您的3d工作台' : 'Explore your 3D workbench'),
+    bio: id ? (lang === 'zh' ? '欢迎来到造物世界' : 'Welcome to the Forge') : (lang === 'zh' ? '探索您的3d工作台' : 'Explore your 3D workbench'),
     isRegistered: !!id,
     level: 'visitor',
     orderCount: 0
@@ -259,11 +259,18 @@ const App: React.FC = () => {
     }
   };
 
-    const handleRegisterSuccess = async () => {
-    const { data: { user } } = await auth.getUser();
-    await handleAuthChange(user ? { uid: user.id, email: user.email } : null);
+    const handleRegisterSuccess = async (finalUid?: string) => {
     if (pendingOrder) setCurrentView(AppView.RESULT);
     else setCurrentView(AppView.PROFILE);
+
+    if (finalUid) {
+      handleAuthChange({ uid: finalUid, email: '' });
+    } else {
+      const { data: { user } } = await auth.getUser().catch(() => ({ data: { user: null } }));
+      if (user) {
+        handleAuthChange({ uid: user.id, email: user.email });
+      }
+    }
   };
 
   const handleLogout = async () => {
