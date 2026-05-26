@@ -469,6 +469,7 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
             <div className="flex-1">
               <div className="flex items-center space-x-2 mb-1">
                 <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${theme === 'dark' ? 'text-purple-300 bg-purple-900/60' : 'text-purple-600 bg-purple-50'}`}>{creation.style}</span>
+                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${theme === 'dark' ? 'text-blue-300 bg-blue-900/60' : 'text-blue-600 bg-blue-50'}`}>{lang === 'zh' ? '小型4cm规格' : 'Mini 4cm Size'}</span>
               </div>
               <h4 className={`text-xl font-black truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{creation.title}</h4>
               <p className={`text-xs mt-2 font-medium leading-relaxed line-clamp-2 ${theme === 'dark' ? 'text-purple-400' : 'text-gray-400'}`}>Prompt: "{creation.prompt}"</p>
@@ -523,7 +524,10 @@ const Checkout: React.FC<CheckoutProps> = ({ lang, userId, creation, addresses, 
               <div className={`h-[1px] my-6 ${theme === 'dark' ? 'bg-purple-800/30' : 'bg-gray-50'}`}></div>
               <div className="flex justify-between items-end mb-10">
                 <span className={`font-black text-xs uppercase tracking-widest mb-1.5 ${theme === 'dark' ? 'text-purple-500' : 'text-gray-400'}`}>{t.total}</span>
-                <span className={`text-5xl font-black tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>¥299</span>
+                <div className="flex flex-col items-end">
+                  <span className={`text-[10px] font-bold text-green-500 mb-1`}>{lang === 'zh' ? '最快8天到货' : 'Fastest delivery in 8 days'}</span>
+                  <span className={`text-5xl font-black tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>¥299</span>
+                </div>
               </div>
 
               <div className="relative w-full mt-4 min-h-[60px] space-y-6 flex flex-col items-center border-t border-dashed border-gray-200/50 pt-8">

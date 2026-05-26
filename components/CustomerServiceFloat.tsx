@@ -15,16 +15,29 @@ const CustomerServiceFloat: React.FC<{ theme?: 'light' | 'dark' }> = ({ theme = 
             </button>
           </div>
           
-          <div className="flex flex-col items-center justify-center space-y-4 py-4">
-            <p className={`text-sm text-center leading-relaxed ${theme === 'dark' ? 'text-purple-200/90' : 'text-gray-700'}`}>
-              添加客服微信号，与我们取得联系：
-            </p>
-            <div className={`px-4 py-3 rounded-2xl font-mono text-xl font-bold select-all flex items-center justify-center ${theme === 'dark' ? 'bg-purple-950/50 text-white border border-purple-700' : 'bg-gray-100 text-purple-900 border border-gray-200'}`}>
-              SelindellSupport
+          <div className="flex flex-col items-center justify-center space-y-4 py-2">
+            <div className={`w-full p-4 rounded-2xl flex items-start space-x-3 ${theme === 'dark' ? 'bg-purple-950/40 border border-purple-800/30' : 'bg-gray-50 border border-gray-100'}`}>
+               <div className="flex-1">
+                 <p className={`text-xs font-black uppercase tracking-widest mb-1 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`}>专属客服热线 / Hotline</p>
+                 <p className={`font-mono text-sm font-bold select-all ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>+86 19043870943</p>
+               </div>
             </div>
-            <p className={`text-xs text-center leading-relaxed ${theme === 'dark' ? 'text-purple-200/70' : 'text-gray-500'}`}>
-              在线时间: 09:00 - 22:00
-            </p>
+            
+            <div className={`w-full p-4 rounded-2xl flex items-start space-x-3 ${theme === 'dark' ? 'bg-purple-950/40 border border-purple-800/30' : 'bg-gray-50 border border-gray-100'}`}>
+               <div className="flex-1">
+                 <p className={`text-xs font-black uppercase tracking-widest mb-1 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`}>官方微信号 / WeChat</p>
+                 <p className={`font-mono text-sm font-bold select-all flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>selindellsupport</p>
+               </div>
+            </div>
+
+            <div className={`w-full p-4 rounded-2xl border border-dashed ${theme === 'dark' ? 'bg-blue-900/10 border-blue-800/30' : 'bg-blue-50/50 border-blue-200'}`}>
+              <h4 className={`text-xs font-black uppercase tracking-widest mb-2 flex items-center ${theme === 'dark' ? 'text-blue-400' : 'text-blue-700'}`}>
+                订单追踪指南
+              </h4>
+              <p className={`text-[11px] leading-relaxed font-medium ${theme === 'dark' ? 'text-blue-200/70' : 'text-blue-800/70'}`}>
+                当您下单完成后，如需查看物流状态，请点击左上角返回主菜单，点击右上角齿轮图标进入个人中心，在「我的订单」即可实时查看进度。
+              </p>
+            </div>
           </div>
         </div>
       )}

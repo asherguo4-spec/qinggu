@@ -72,7 +72,7 @@ const CustomerService: React.FC<CustomerServiceProps> = ({ lang, userId, onBack,
       {/* Main Support Entry */}
       <div className="grid grid-cols-2 gap-4 mb-10">
         <button 
-          onClick={() => alert(lang === 'zh' ? '请拨打电话：+86 19043870943' : 'Please call: +86 19043870943')}
+          onClick={() => alert(lang === 'zh' ? '专属客服热线：+86 19043870943\n官方微信号：selindell_service' : 'Premium Support Line: +86 19043870943\nOfficial WeChat: selindell_service')}
           className={`p-6 rounded-[32px] flex flex-col items-center space-y-4 border relative group overflow-hidden active:scale-95 transition-all col-span-2 ${theme === 'dark' ? 'bg-purple-900/20 border-purple-800/30' : 'bg-white border-gray-100'}`}
         >
           <div className="absolute top-0 right-0 p-2 bg-purple-500/10 text-purple-400">
@@ -85,9 +85,27 @@ const CustomerService: React.FC<CustomerServiceProps> = ({ lang, userId, onBack,
             <div className={`absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-4 rounded-full ${theme === 'dark' ? 'border-[#1a0b2e]' : 'border-white'}`}></div>
           </div>
           <div className="text-center">
-            <span className={`font-bold text-sm block ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{t.human}</span>
+            <span className={`font-bold text-sm block mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{t.human}</span>
+            <span className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`}>WeChat: selindell_service</span>
           </div>
         </button>
+      </div>
+
+      {/* Order Tracking Notice */}
+      <div className={`mb-10 p-5 rounded-[24px] border border-dashed flex items-start space-x-4 ${theme === 'dark' ? 'bg-blue-900/10 border-blue-800/30' : 'bg-blue-50/50 border-blue-200'}`}>
+        <div className={`p-2 rounded-full shrink-0 ${theme === 'dark' ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
+          <HelpCircle size={16} />
+        </div>
+        <div>
+          <h4 className={`text-xs font-black uppercase tracking-widest mb-1 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-700'}`}>
+            {lang === 'zh' ? '订单追踪指南' : 'Order Tracking Guide'}
+          </h4>
+          <p className={`text-[11px] leading-relaxed font-medium ${theme === 'dark' ? 'text-blue-200/70' : 'text-blue-800/70'}`}>
+            {lang === 'zh' 
+              ? '当您下单完成后，如需查看物流状态，请点击左上角返回主菜单，点击右上角齿轮图标进入个人中心，在「我的订单」即可实时查看进度。' 
+              : 'To view your logistics status after checkout, return to the main menu and tap the settings icon on the top right to access "Orders" in your profile.'}
+          </p>
+        </div>
       </div>
 
       {/* FAQ Section */}
