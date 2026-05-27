@@ -49,8 +49,13 @@ export class SelindellAIService {
     return { status: "pass" };
   }
 
-  async analyzeReferenceImage(base64Image: string, userPrompt: string, signal?: AbortSignal): Promise<string> {
+  async analyzeReferenceImage(base64Image: string, userPrompt: string, styleId?: string, signal?: AbortSignal): Promise<string> {
     try {
+      let styleText = "萌趣Q版（潮玩手办）";
+      if (styleId === "mecha") styleText = "机甲未来风（Sci-Fi Mecha）";
+      else if (styleId === "retro") styleText = "中华复古风（国风）";
+      else if (styleId === "pixel") styleText = "马赛克像素风（体素块级）";
+
       const messages = [
         {
           role: "user",
@@ -59,11 +64,17 @@ export class SelindellAIService {
               type: "text",
               text: `你是一个专业的3D手办原型分析师。请仔细分析这张图像并提取核心主体，用于后续全彩3D打印手办的生成。
 用户指令：【${userPrompt ? userPrompt : "无，请自动提炼图片中的主要核心事物"}】
+当前目标生成风格为：【${styleText}】
 
 要求如下：
 1. 锁定主体：严格遵循用户指令。若用户无明确指定且图片内有多个对象，请自动选择最显眼的核心事物（无论是人、动物、还是稀奇古怪的物品）。
-2. 细节捕捉：如果包含人像或生物面部，必须极度精准地抓住面部特征（如酒窝、高颧骨、深邃眼窝、塌鼻梁或高鼻梁、显著表情或独特的发型等）。如果是纯物品，提炼其最标志性的形态和结构。
-3. 脑补补全（核心要求）：手办必须是完整的全身形态！如果图像是不完整的（例如只有脸部、大头照、或半身照），你必须合理发挥想象力，为其脑补出极其搭配的完整下半身或缺失部位（如穿着什么裤子、鞋履，姿态如何），将其补全为一个完整的全身对象。
+2. 细节捕捉：抽取最核心的特征。如果是人像或生物面部，必须极度精准地抓住面部特征（如酒窝、高颧骨、深邃眼窝、塌鼻梁或高鼻梁、显著表情或独特的发型等）。如果是纯物品，提炼其最标志性的形态和结构。
+3. ✨风格化脑补补全（核心要求）✨：手办必须是完整的全身形态！如果图像是不完整的（例如只有脸部、大头照、或半身照），你必须合理发挥想象力，为其脑补出极其搭配的完整下半身或缺失部位（如穿着什么衣服、裤子、鞋履，姿态如何），将其补全为一个完整的全身对象。
+【重要】：脑补的内容必须与当前的【${styleText}】风格高度契合！
+-> 若为机甲未来风：请脑补装甲、外骨骼或机械部件等。
+-> 若为中华复古风：请脑补汉服、中式长袍或其他传统服饰等。
+-> 若为马赛克像素风：请想象其由简单方块构成的样子等。
+-> 若默认或萌趣Q版：优先脑补短胖可爱的短腿、大鞋子等。
 
 将提取的面部细节和脑补补全的全身外观融合成一段具体、形象的中文描述文字（不要讲废话，直接给出描述，80-100字左右）。`
             },
@@ -104,7 +115,7 @@ export class SelindellAIService {
   async generateShortTitle(prompt: string, base64Image?: string | null, signal?: AbortSignal, lang?: string): Promise<string> {
     let description = prompt;
     if (base64Image && (prompt.length < 10 || prompt.includes("图片") || prompt.includes("image"))) {
-      description = await this.analyzeReferenceImage(base64Image, prompt, signal);
+      description = await this.analyzeReferenceImage(base64Image, prompt, undefined, signal);
     }
     
     // Choose prompt based on language
@@ -130,7 +141,7 @@ export class SelindellAIService {
   async generate360Creation(prompt: string, styleId: string, base64Image?: string | null, signal?: AbortSignal): Promise<string[]> {
     let coreSubject = prompt;
     if (base64Image) {
-      coreSubject = await this.analyzeReferenceImage(base64Image, prompt, signal);
+      coreSubject = await this.analyzeReferenceImage(base64Image, prompt, styleId, signal);
     }
 
     let finalPrompt = "";
