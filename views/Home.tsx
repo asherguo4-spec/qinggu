@@ -267,7 +267,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
   }, [lang]);
 
   const handleGenerateClick = async () => {
-    if (!prompt.trim()) {
+    if (!prompt.trim() && !referenceImage) {
       setErrorMessage(t.placeholder);
       return;
     }
@@ -381,8 +381,8 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
     <div className={`py-4 pb-32 relative ${isSquareOnly ? 'pt-8' : ''}`}>
       {autoStyleHint && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[110] animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className="bg-black/80 backdrop-blur-md text-white text-sm px-6 py-3 rounded-full shadow-lg flex items-center space-x-2">
-            <Sparkles size={16} className="text-[#FF4A26]" />
+          <div className="bg-[#FFB800] text-gray-900 border border-[#CC9300] font-bold text-sm px-6 py-3 rounded-full shadow-[0_8px_30px_rgba(255,184,0,0.4)] flex items-center space-x-2">
+            <Sparkles size={16} className="text-gray-900" />
             <span>{autoStyleHint}</span>
           </div>
         </div>
