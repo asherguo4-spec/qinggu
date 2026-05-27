@@ -10,13 +10,6 @@ export const CREATION_STYLES: CreationStyle[] = [
     imageUrl: '/cute.png'
   },
   {
-    id: 'cyber',
-    name: '赛博朋克',
-    description: '赛博朋克',
-    promptSuffix: 'in a minimalist cyberpunk toy style, chunky solid shapes, easy to 3d print, smooth vinyl texture, no intricate details, no floating parts, cute cyberpunk aesthetic, pop mart style',
-    imageUrl: '/cyber.png'
-  },
-  {
     id: 'mecha',
     name: '机甲未来',
     description: '机甲风',

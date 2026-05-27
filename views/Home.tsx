@@ -35,12 +35,12 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
   const [prompt, setPrompt] = useState('');
   const [selectedStyleId, setSelectedStyleId] = useState(CREATION_STYLES[0].id);
   const [lastResult, setLastResult] = useState<GeneratedCreation | null>(null);
-  const [isExpanding, setIsExpanding] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copyrightSuggestion, setCopyrightSuggestion] = useState<string | null>(null);
   const [showSlowNetworkHint, setShowSlowNetworkHint] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [autoStyleHint, setAutoStyleHint] = useState<string | null>(null);
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
@@ -56,6 +56,9 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
       const reader = new FileReader();
       reader.onloadend = () => {
         setReferenceImage(reader.result as string);
+        setSelectedStyleId('cute');
+        setAutoStyleHint(lang === 'zh' ? '已自动为你匹配萌趣Q版' : 'Automatically matched Cute style for you');
+        setTimeout(() => setAutoStyleHint(null), 3000);
       };
       reader.readAsDataURL(file);
     }
@@ -292,7 +295,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
 
       // Parallelize image generation and lore generation to save time
       const [imageUrls, loreData, storyCard, shortTitle] = await Promise.all([
-        geminiService.generate360Creation(prompt, style.promptSuffix, referenceImage || undefined, signal),
+        geminiService.generate360Creation(prompt, style.id, referenceImage || undefined, signal),
         geminiService.generateLoreAndStats(prompt, signal),
         geminiService.generateStoryCard(prompt, style.name, lang, signal),
         geminiService.generateShortTitle(prompt, referenceImage || undefined, signal, lang)
@@ -354,21 +357,6 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
     setView(AppView.HOME);
   };
 
-  const handleExpandPrompt = async () => {
-    if (!prompt.trim()) return;
-    if (isExpanding) return;
-    setIsExpanding(true);
-    setErrorMessage(null);
-    try {
-      const expanded = await geminiService.expandPrompt(prompt);
-      setPrompt(expanded);
-    } catch (err: any) { 
-      setErrorMessage(err.message);
-    } finally { 
-      setIsExpanding(false); 
-    }
-  };
-
   const scrollToInput = () => {
     const mainElement = document.querySelector('main');
     if (mainElement) {
@@ -391,6 +379,15 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
 
   return (
     <div className={`py-4 pb-32 relative ${isSquareOnly ? 'pt-8' : ''}`}>
+      {autoStyleHint && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[110] animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="bg-black/80 backdrop-blur-md text-white text-sm px-6 py-3 rounded-full shadow-lg flex items-center space-x-2">
+            <Sparkles size={16} className="text-[#FF4A26]" />
+            <span>{autoStyleHint}</span>
+          </div>
+        </div>
+      )}
+
       {errorMessage && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className={`absolute inset-0 backdrop-blur-md ${theme === 'dark' ? 'bg-[#1a0b2e]/60' : 'bg-white/60'}`} onClick={() => setErrorMessage(null)}></div>
@@ -475,8 +472,8 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
               {/* Hero Section */}
               <div className={`mt-0 mb-8 w-full h-40 md:h-56 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.12)] border relative ${theme === 'dark' ? 'border-[#333]' : 'border-gray-200'}`}>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 flex flex-col justify-end p-6">
-                  <span className="text-[#FFE8A1] text-[10px] font-black tracking-widest uppercase mb-1">Selindell 万物造物协议</span>
-                  <h2 className="text-white text-xl font-bold tracking-tight">从灵感穿透供应链</h2>
+                  <span className="text-[#FFE8A1] text-[10px] font-black tracking-widest uppercase mb-1">Selindell 万物造物</span>
+                  <h2 className="text-white text-xl font-bold tracking-tight">专属于你——独一无二</h2>
                 </div>
                 <img 
                   src="/hero.png" 
@@ -490,7 +487,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
                  <div className="flex items-center justify-between mb-3 px-2">
                     <div className="flex items-center space-x-2">
                       <div className="w-1.5 h-4 bg-[#FF4A26] rounded-full"></div>
-                      <span className={`text-[13px] font-black tracking-widest ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{lang === 'zh' ? '设计要求 / 灵感描述' : t.exampleHint}</span>
+                      <span className={`text-[13px] font-black tracking-widest ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{lang === 'zh' ? '输入你的灵感' : t.exampleHint}</span>
                     </div>
                  </div>
 
@@ -498,7 +495,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
                     <div className="flex mb-14">
                       <textarea
                         className={`flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-base md:text-lg font-medium h-24 md:h-32 resize-none leading-relaxed no-scrollbar ${theme === 'dark' ? 'text-white placeholder:text-gray-600' : 'text-gray-900 placeholder:text-gray-400'}`}
-                        placeholder={lang === 'zh' ? '输入您的设计想法，例如："赛博朋克风格的机甲少女" 或 "中国风神兽模型"' : t.placeholder}
+                        placeholder={lang === 'zh' ? '输入想象（我想要一个穿西装的狮子的手办），也可以点击下方上传自拍做成手办...' : t.placeholder}
                         value={prompt}
                         maxLength={500}
                         onChange={(e) => setPrompt(e.target.value)}
@@ -516,31 +513,30 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
                             className="hidden" 
                           />
                           {referenceImage ? (
-                            <div className="relative group">
+                            <div className="relative group z-10">
                               <button 
                                 onClick={() => fileInputRef.current?.click()}
-                                className={`flex items-center justify-center pl-1.5 pr-4 py-1.5 rounded-full border transition-all duration-300 ${theme === 'dark' ? 'border-purple-500/50 bg-purple-900/30' : 'border-purple-300 bg-purple-50'}`}
+                                className={`w-12 h-12 rounded-xl border-2 shadow-sm overflow-hidden flex items-center justify-center active:scale-95 transition-all duration-300 ${theme === 'dark' ? 'border-[#FF4A26] bg-[#1a0b2e]' : 'border-[#FF4A26] bg-white'}`}
+                                title={lang === 'zh' ? '更改图片' : 'Change Image'}
                               >
-                                <div className="w-7 h-7 rounded-full overflow-hidden mr-2 border border-purple-500/30">
-                                  <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
-                                </div>
-                                <span className={`text-xs font-black ${theme === 'dark' ? 'text-[#FF4A26]' : 'text-[#FF4A26]'}`}>
-                                  {lang === 'zh' ? '已添加参考图' : lang === 'ja' ? '追加済み' : 'Added'}
-                                </span>
+                                <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); setReferenceImage(null); }}
-                                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md z-20"
                               >
-                                <X size={10} />
+                                <X size={12} strokeWidth={3} />
                               </button>
                             </div>
                           ) : (
                             <button 
                               onClick={() => fileInputRef.current?.click()}
-                              className={`flex items-center justify-center px-4 py-2 rounded-full border transition-all duration-300 ${theme === 'dark' ? 'border-gray-700 bg-gray-800/50 text-gray-400 hover:text-white' : 'border-gray-200 bg-gray-50 text-gray-500 hover:text-gray-800'}`}
+                              className={`group flex items-center justify-center space-x-1.5 px-1 py-1 rounded-full transition-all duration-300 ${theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
                             >
-                              <span className="text-[11px] font-black">{lang === 'zh' ? '+ 添加参考图' : lang === 'ja' ? '+ 画像' : '+ Image'}</span>
+                              <div className={`p-1.5 rounded-full border transition-colors ${theme === 'dark' ? 'border-gray-600 group-hover:border-white group-hover:bg-white/10' : 'border-gray-400 group-hover:border-gray-900 group-hover:bg-gray-100'}`}>
+                                <ImagePlus size={16} strokeWidth={2.5} />
+                              </div>
+                              <span className="text-xs font-bold">{lang === 'zh' ? '+ 图片(可选)' : '+ Image'}</span>
                             </button>
                           )}
                         </div>
@@ -552,27 +548,16 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
                           ))}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end space-y-2 ml-auto">
-                        <span className={`text-[9px] font-bold ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'} uppercase tracking-widest mr-1`}>{lang === 'zh' ? '让AI丰富细节' : t.expandHint}</span>
-                        <button
-                          onClick={handleExpandPrompt}
-                          disabled={!prompt.trim() || isExpanding}
-                          className={`flex items-center space-x-1 px-4 py-2 rounded-full text-[11px] font-black active:scale-95 disabled:opacity-30 transition-all ${theme === 'dark' ? 'bg-[#2A2A2A] text-white border border-[#333]' : 'bg-[#E5E5EA] text-[#1C1C1E] hover:bg-[#D1D1D6]'}`}
-                        >
-                          {isExpanding ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
-                          <span>{isExpanding ? t.expanding : (lang === 'zh' ? '灵感增强' : t.expandBtn)}</span>
-                        </button>
-                      </div>
                     </div>
                  </div>
               </div>
 
               <div className="mb-10">
                 <div className="flex items-center justify-between mb-4 px-1">
-                  <h3 className={`text-[13px] font-black tracking-widest uppercase ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{lang === 'zh' ? '工艺规格与比例' : t.styleTitle}</h3>
+                  <h3 className={`text-[13px] font-black tracking-widest uppercase ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{lang === 'zh' ? '风格选择' : t.styleTitle}</h3>
                   <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>选择预设模型比例</span>
                 </div>
-                <div className="grid grid-cols-5 gap-3 px-1 md:gap-4">
+                <div className="grid grid-cols-4 gap-3 px-1 md:gap-4">
                   {CREATION_STYLES.map((style) => {
                     const isSelected = selectedStyleId === style.id;
                     return (
@@ -601,7 +586,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
               >
                 <div className="flex items-center space-x-3">
                   {isGenerating ? <Loader2 className="animate-spin text-white" size={20} /> : <Zap size={20} className={(!prompt.trim() && !referenceImage) ? '' : 'text-[#FFE8A1]'} />}
-                  <span className="relative z-10 tracking-wider font-bold text-[17px]">{isGenerating ? (lang === 'zh' ? '正在渲染物理参数...' : t.generating) : (lang === 'zh' ? '生成 3D 实体模型' : t.generateBtn)}</span>
+                  <span className="relative z-10 tracking-wider font-bold text-[17px]">{isGenerating ? (lang === 'zh' ? '正在渲染物理参数...' : t.generating) : (lang === 'zh' ? '开始造手办' : t.generateBtn)}</span>
                 </div>
                 {!isGenerating && (prompt.trim() || referenceImage) && (
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>

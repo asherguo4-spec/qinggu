@@ -16,11 +16,15 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ lang = 'zh', showHi
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {
-        if (prev < 90) return prev + (Math.random() * 15);
-        if (prev < 99) return prev + (Math.random() * 0.5);
-        return prev;
+        let next = prev;
+        if (prev < 60) next = prev + (Math.random() * 8 + 2); // 2 to 10
+        else if (prev < 85) next = prev + (Math.random() * 4 + 1); // 1 to 5
+        else if (prev < 95) next = prev + (Math.random() * 1.5 + 0.5); // 0.5 to 2
+        else next = prev + (Math.random() * 0.2 + 0.1); // 0.1 to 0.3
+        
+        return Math.min(next, 99); // Max 99%
       });
-    }, 800);
+    }, 1200);
     return () => clearInterval(interval);
   }, []);
 
