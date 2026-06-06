@@ -52,6 +52,68 @@ app.use((req, res, next) => {
   next();
 });
 
+// Proxy route for Ark Chat API (Securely hide API Key on the server)
+app.post("/api/ark-completions", async (req, res) => {
+  const apiKey = process.env.VOLCENGINE_API_KEY || process.env.ARK_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: { message: "未配置 ARK API Key" } });
+  }
+
+  try {
+    console.log(`[Ark Chat completions] Using model EP: ${req.body.model}`);
+
+    const arkRes = await fetch("https://ark.cn-beijing.volces.com/api/v3/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(req.body)
+    });
+
+    const data = await arkRes.json();
+    if (!arkRes.ok) {
+      console.error(`[Ark Chat] Error response for model ${body.model}:`, JSON.stringify(data));
+      return res.status(arkRes.status).json(data);
+    }
+    return res.json(data);
+  } catch (error: any) {
+    console.error("Ark API Error:", error);
+    res.status(500).json({ error: { message: error.message || "Failed to call Ark API" } });
+  }
+});
+
+// Proxy route for Ark Image Generation API
+app.post("/api/ark-images-generations", async (req, res) => {
+  const apiKey = process.env.VOLCENGINE_API_KEY || process.env.ARK_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: { message: "未配置 ARK API Key" } });
+  }
+
+  try {
+    console.log(`[Ark Image Generation] Using model EP: ${req.body.model}`);
+
+    const arkRes = await fetch("https://ark.cn-beijing.volces.com/api/v3/images/generations", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(req.body)
+    });
+
+    const data = await arkRes.json();
+    if (!arkRes.ok) {
+      console.error(`[Ark Image] Error response for model ${body.model}:`, JSON.stringify(data));
+      return res.status(arkRes.status).json(data);
+    }
+    return res.json(data);
+  } catch (error: any) {
+    console.error("Ark Image API Error:", error);
+    res.status(500).json({ error: { message: error.message || "Failed to call Ark API" } });
+  }
+});
+
 // 7. 爱发电 (Aifadian) 支付逻辑
 const AIFADIAN_USER_ID = process.env.AIFADIAN_USER_ID;
 const AIFADIAN_TOKEN = process.env.AIFADIAN_TOKEN;

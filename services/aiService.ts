@@ -2,10 +2,7 @@
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 
 export class SelindellAIService {
-  private async callOpenRouter(model: string, messages: any[], responseFormat?: any, signal?: AbortSignal) {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("未配置 OpenRouter API Key");
-
+  private async callArkAPI(model: string, messages: any[], responseFormat?: any, signal?: AbortSignal) {
     const body: any = {
       model,
       messages
@@ -15,13 +12,10 @@ export class SelindellAIService {
       body.response_format = responseFormat;
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("/api/ark-completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": typeof window !== 'undefined' ? window.location.origin : "http://localhost:3000",
-        "X-Title": "Selindell Forge"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(body),
       signal
@@ -30,6 +24,24 @@ export class SelindellAIService {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || `请求失败 (${response.status})`);
+    }
+
+    return await response.json();
+  }
+
+  private async callArkImageAPI(model: string, prompt: string, signal?: AbortSignal) {
+    const response = await fetch("/api/ark-images-generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ model, prompt }),
+      signal
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || `图片生成请求失败 (${response.status})`);
     }
 
     return await response.json();
@@ -87,7 +99,7 @@ export class SelindellAIService {
           ]
         }
       ];
-      const data = await this.callOpenRouter("qwen/qwen-vl-plus", messages, undefined, signal);
+      const data = await this.callArkAPI("ep-20260606105123-vgfgq", messages, undefined, signal);
       return data.choices[0].message.content.trim();
     } catch (e: any) {
       if (e.name === 'AbortError') throw e;
@@ -98,8 +110,8 @@ export class SelindellAIService {
 
   async expandPrompt(prompt: string, signal?: AbortSignal): Promise<string> {
     try {
-      const data = await this.callOpenRouter(
-        "qwen/qwen-plus",
+      const data = await this.callArkAPI(
+        "ep-20260606104808-xx4sf",
         [{ role: "user", content: `你是一位手办设计师。请将 “${prompt}” 扩写成 50 字的手办描述。只返回纯中文，不要解释。` }],
         undefined,
         signal
@@ -123,8 +135,8 @@ export class SelindellAIService {
     let maxLength = 5;
     
     try {
-      const data = await this.callOpenRouter(
-        "qwen/qwen-plus",
+      const data = await this.callArkAPI(
+        "ep-20260606104808-xx4sf",
         [{ role: "user", content: promptContent }],
         undefined,
         signal
@@ -251,78 +263,25 @@ export class SelindellAIService {
 画面渲染：两视图均需全彩实物级3D，摄影棚级布光，像真实摆放的手办极简商品照。`;
     }
 
-    let contentArray: any[] = [
-      {
-        type: "text",
-        text: finalPrompt
-      }
-    ];
-
-    if (base64Image) {
-      contentArray.push({
-        type: "image_url",
-        image_url: {
-          url: base64Image
-        }
-      });
-    }
-
     try {
-      const data = await this.callOpenRouter(
-        "seedream-4.5",
-        [{ 
-          role: "user", 
-          content: contentArray
-        }],
-        undefined,
+      const data = await this.callArkImageAPI(
+        "ep-20260606105301-zmbjm",
+        finalPrompt,
         signal
       );
 
-      if (!data.choices || data.choices.length === 0) {
-        throw new Error("OpenRouter 未返回任何选项 (choices)");
+      if (!data.data || data.data.length === 0) {
+        throw new Error("Ark 未返回任何图片");
       }
 
-      const message = data.choices[0].message;
-      const images: string[] = [];
+      const imageUrl = data.data[0].url;
 
-      // 【最关键的一步】OpenRouter 的图片生成专用字段
-      if (message.images && Array.isArray(message.images)) {
-        for (const img of message.images) {
-          const url = typeof img === 'string' ? img : (img.url || img.image_url?.url);
-          if (url) images.push(url);
-        }
+      if (!imageUrl) {
+        console.log("Ark 完整回复对象:", JSON.stringify(data, null, 2));
+        throw new Error(`AI 未返回图像。`);
       }
 
-      // 【兜底逻辑 1】如果上面的没找到，再看 content 是否直接就是 URL
-      const content = message.content?.trim() || "";
-      if (images.length === 0 && content.startsWith("http")) {
-        images.push(content);
-      }
-
-      // 【兜底逻辑 2】如果是 Base64 文本
-      if (images.length === 0 && content.includes("data:image")) {
-        const match = content.match(/data:image\/[^;]+;base64,[^"'\s)]+/);
-        if (match) images.push(match[0]);
-      }
-      
-      // 【兜底逻辑 3】检查 OpenRouter 的其他可能结构
-      if (images.length === 0) {
-        const parts = message.parts || message.content_parts || [];
-        if (Array.isArray(parts)) {
-          for (const part of parts) {
-            if (part.image_url) images.push(part.image_url.url || part.image_url);
-            if (part.inline_data) images.push(`data:${part.inline_data.mime_type};base64,${part.inline_data.data}`);
-          }
-        }
-      }
-
-      // 如果还是空，报错并打印出 AI 到底回了什么
-      if (images.length === 0) {
-        console.log("OpenRouter 完整回复对象:", JSON.stringify(data, null, 2));
-        throw new Error(`AI 未返回图像。AI 文本内容: "${content.substring(0, 50)}..."`);
-      }
-
-      return images;
+      return [imageUrl];
     } catch (error: any) {
       if (error.name !== 'AbortError' && !(error.message && error.message.toLowerCase().includes('abort'))) {
         console.error("Image generation error:", error);
@@ -333,8 +292,8 @@ export class SelindellAIService {
 
   async generateLoreAndStats(prompt: string, signal?: AbortSignal) {
     try {
-      const data = await this.callOpenRouter(
-        "qwen/qwen-plus",
+      const data = await this.callArkAPI(
+        "ep-20260606104808-xx4sf",
         [{ role: "user", content: `你是一个剧本策划。请基于描述 “${prompt}”，生成这个造物的手办名称、一段30字以内的引人入胜的背景故事、以及战斗属性。
         必须以 JSON 格式返回，包含以下字段：
         - title: 字符串，名称
@@ -358,8 +317,8 @@ export class SelindellAIService {
     const targetLang = '简体中文';
 
     try {
-      const data = await this.callOpenRouter(
-        "qwen/qwen-plus",
+      const data = await this.callArkAPI(
+        "ep-20260606104808-xx4sf",
         [{ 
           role: "user", 
           content: `你是一位顶尖的 IP 策划。请根据以下描述：“${prompt}” 和风格：“${style}”，将这个造物定义为一个独特的 IP 角色，并为其撰写一段 50 字左右的 ${targetLang} 背景故事介绍。要求文字优美、引人入胜，赋予其生命力。只返回故事内容，不要任何其他文字。` 
@@ -380,51 +339,23 @@ export class SelindellAIService {
    */
   async generateLogo(base64Image: string, stylePrompt: string, signal?: AbortSignal): Promise<string> {
     try {
-      // 虽然用户要求全换成 Qwen3.5 Plus，但 Qwen 本身不具备图片生成能力（只具备分析能力）。
-      // 在国内上线的合规替代方案中，Seedream 4.5 是目前该应用中已配置且支持图生图的国产模型。
-      // 如果 Qwen3.5 Plus 后续支持图生图输出，可在此更换。
-      const data = await this.callOpenRouter(
-        "seedream-4.5",
-        [{ 
-          role: "user", 
-          content: [
-            {
-              type: "text",
-              text: stylePrompt
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: base64Image.startsWith('data:') ? base64Image : `data:image/jpeg;base64,${base64Image}`
-              }
-            }
-          ] 
-        }],
-        undefined,
+      // 1. 先用视觉模型分析图片内容
+      const imageDesc = await this.analyzeReferenceImage(base64Image, "描述这个图案的主要视觉元素、形状和特征，要极其简短，作为生成Logo的参考。", undefined, signal);
+
+      // 2. 将内容和风格结合，发送给图片生成引擎
+      const finalPrompt = `请根据以下描述设计一个Logo图案：${imageDesc}。风格要求：${stylePrompt}`;
+
+      const data = await this.callArkImageAPI(
+        "ep-20260606105301-zmbjm",
+        finalPrompt,
         signal
       );
 
-      if (!data.choices || data.choices.length === 0) {
-        throw new Error("OpenRouter 未返回任何内容");
+      if (!data.data || data.data.length === 0) {
+        throw new Error("Ark 未返回任何内容");
       }
 
-      const message = data.choices[0].message;
-      let imageUrl = "";
-
-      if (message.images && message.images[0]) {
-        imageUrl = typeof message.images[0] === 'string' ? message.images[0] : (message.images[0].url || message.images[0].image_url?.url);
-      } else if (message.content?.startsWith("http")) {
-        imageUrl = message.content.trim();
-      } else {
-        // 检查各种可能的 OpenRouter 结构
-        const parts = message.parts || message.content_parts || [];
-        for (const part of parts) {
-          if (part.image_url) {
-            imageUrl = part.image_url.url || part.image_url;
-            break;
-          }
-        }
-      }
+      const imageUrl = data.data[0].url;
 
       if (!imageUrl) throw new Error("AI 未生成有效的 Logo 图片 URL");
       return imageUrl;

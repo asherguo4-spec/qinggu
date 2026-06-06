@@ -5,7 +5,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 let isOfflineMode = false;
 
-const customFetch = async (url: string, options: any) => {
+const customFetch = async (url: URL | RequestInfo, options?: RequestInit | undefined): Promise<Response> => {
   if (isOfflineMode) {
     throw new Error('Offline fallback mode enabled');
   }
