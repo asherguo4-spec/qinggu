@@ -92,19 +92,6 @@ const Profile: React.FC<ProfileProps> = ({ lang, setView, userProfile, onLogout,
 
       <div className={`mb-2 divide-y shrink-0 shadow-sm transition-colors duration-500 ${theme === 'dark' ? 'bg-purple-900/20 divide-purple-800/30' : 'bg-white divide-gray-50'}`}>
         <button 
-          onClick={() => setView(AppView.ORDERS)}
-          className={`w-full flex items-center justify-between px-6 py-5 transition-colors text-left ${theme === 'dark' ? 'active:bg-purple-800/30' : 'active:bg-gray-50'}`}
-        >
-          <div className="flex items-center space-x-4">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${theme === 'dark' ? 'bg-purple-900/40 text-purple-400' : 'bg-purple-50 text-purple-600'}`}>
-              <ClipboardList size={22} />
-            </div>
-            <span className={`text-[16px] font-black ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{translations[lang].orders.title}</span>
-          </div>
-          <ChevronRight size={18} className={theme === 'dark' ? 'text-purple-800' : 'text-gray-200'} />
-        </button>
-
-        <button 
           onClick={() => setView(AppView.FAVORITES)}
           className={`w-full flex items-center justify-between px-6 py-5 transition-colors text-left ${theme === 'dark' ? 'active:bg-purple-800/30' : 'active:bg-gray-50'}`}
         >
