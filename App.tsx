@@ -575,8 +575,11 @@ const App: React.FC = () => {
               <div className={`text-[10px] font-medium tracking-wider uppercase ${theme === 'dark' ? 'text-purple-400/30' : 'text-gray-400/60'}`}>
                 © 2024-2026 跃壹知品（郑州）科技有限公司 | YUONE
               </div>
-              <div className={`text-[9px] font-medium tracking-wide ${theme === 'dark' ? 'text-purple-500/20' : 'text-gray-400/40'}`}>
-                地址：中国河南省郑州市航空港区青禾众创 | 邮编：451162
+              <div className={`text-[9px] font-medium tracking-wide flex flex-col sm:flex-row items-center gap-1 sm:gap-3 ${theme === 'dark' ? 'text-purple-500/20' : 'text-gray-400/40'}`}>
+                <span>地址：中国河南省郑州市航空港区青禾众创 | 邮编：451162</span>
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-purple-500 transition-colors">
+                  豫ICP备2026024753号-1
+                </a>
               </div>
             </div>
           </footer>
