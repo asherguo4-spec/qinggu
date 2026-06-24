@@ -4,9 +4,15 @@ import path from "path";
 import crypto from "crypto";
 
 const app = express();
-// const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-// const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
-// const supabase = createClient(supabaseUrl, supabaseKey);
+
+// 1. 跨域放行 (Move to very top)
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -44,14 +50,6 @@ app.post("/api/upload", async (req, res) => {
   }
 });
 
-// 2. 跨域放行
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
-
 // Proxy route for Ark Chat API (Securely hide API Key on the server)
 app.post("/api/ark-completions", async (req, res) => {
   const apiKey = process.env.VOLCENGINE_API_KEY || process.env.ARK_API_KEY;
@@ -74,8 +72,7 @@ app.post("/api/ark-completions", async (req, res) => {
 
     const data = await arkRes.json();
     if (!arkRes.ok) {
-      const errorModel = req.body?.model || "unknown";
-      console.error(`[Ark Chat] Error response for model ${errorModel}:`, JSON.stringify(data));
+      console.error(`[Ark Chat] Error response for model ${req.body.model}:`, JSON.stringify(data));
       return res.status(arkRes.status).json(data);
     }
     return res.json(data);
@@ -107,8 +104,7 @@ app.post("/api/ark-images-generations", async (req, res) => {
 
     const data = await arkRes.json();
     if (!arkRes.ok) {
-      const errorModel = req.body?.model || "unknown";
-      console.error(`[Ark Image] Error response for model ${errorModel}:`, JSON.stringify(data));
+      console.error(`[Ark Image] Error response for model ${req.body.model}:`, JSON.stringify(data));
       return res.status(arkRes.status).json(data);
     }
     return res.json(data);
@@ -134,7 +130,7 @@ function getAifadianSign(params: string, ts: number) {
 
 app.post("/api/checkout", (req, res) => {
   try {
-    const { email, amount = 299, orderId } = req.body || {};
+    const { email, amount = 299, orderId } = req.body;
     if (!email) {
       return res.status(400).json({ error: "Missing email" });
     }
