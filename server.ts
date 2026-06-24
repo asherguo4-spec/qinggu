@@ -2,6 +2,7 @@ import express from "express";
 import axios from "axios";
 import path from "path";
 import crypto from "crypto";
+import fetch from "cross-fetch";
 
 const app = express();
 

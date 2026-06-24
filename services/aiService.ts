@@ -22,8 +22,14 @@ export class SelindellAIService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || `请求失败 (${response.status})`);
+      const errorText = await response.text();
+      let errorObj;
+      try {
+        errorObj = JSON.parse(errorText);
+      } catch (e) {
+        throw new Error(`API Error (${response.status}): ${errorText.substring(0, 100)}...`);
+      }
+      throw new Error(errorObj.error?.message || `请求失败 (${response.status})`);
     }
 
     return await response.json();
@@ -40,8 +46,14 @@ export class SelindellAIService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || `图片生成请求失败 (${response.status})`);
+      const errorText = await response.text();
+      let errorObj;
+      try {
+        errorObj = JSON.parse(errorText);
+      } catch (e) {
+        throw new Error(`API Error (${response.status}): ${errorText.substring(0, 100)}...`);
+      }
+      throw new Error(errorObj.error?.message || `图片生成请求失败 (${response.status})`);
     }
 
     return await response.json();
