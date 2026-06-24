@@ -273,6 +273,12 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
     }
     if (isGenerating) return;
 
+    // Sanitize prompt to remove potential invisible control characters from mobile keyboards
+    const sanitizedPrompt = prompt.replace(/[\u0000-\u001F\u007F-\u009F\u200B]/g, "").trim();
+
+    // Sanitize base64 image string to remove any line breaks inserted by iOS Safari
+    const sanitizedReferenceImage = referenceImage ? referenceImage.replace(/[\r\n]+/g, "") : undefined;
+
     const style = CREATION_STYLES.find(s => s.id === selectedStyleId) || CREATION_STYLES[0];
     setIsGenerating(true);
     setView(AppView.GENERATING);
@@ -285,7 +291,7 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
     
     try {
       // 1. Copyright Check
-      const copyrightCheck = await geminiService.checkCopyright(prompt, lang, signal);
+      const copyrightCheck = await geminiService.checkCopyright(sanitizedPrompt, lang, signal);
       if (copyrightCheck.status === 'reject') {
         setIsGenerating(false);
         setView(AppView.HOME);
@@ -295,10 +301,10 @@ const Home: React.FC<HomeProps> = ({ currentView, setView, onCreationSuccess, se
 
       // Parallelize image generation and lore generation to save time
       const [imageUrls, loreData, storyCard, shortTitle] = await Promise.all([
-        geminiService.generate360Creation(prompt, style.id, referenceImage || undefined, signal),
-        geminiService.generateLoreAndStats(prompt, signal),
-        geminiService.generateStoryCard(prompt, style.name, lang, signal),
-        geminiService.generateShortTitle(prompt, referenceImage || undefined, signal, lang)
+        geminiService.generate360Creation(sanitizedPrompt, style.id, sanitizedReferenceImage, signal),
+        geminiService.generateLoreAndStats(sanitizedPrompt, signal),
+        geminiService.generateStoryCard(sanitizedPrompt, style.name, lang, signal),
+        geminiService.generateShortTitle(sanitizedPrompt, sanitizedReferenceImage, signal, lang)
       ]);
 
       if (signal.aborted) return;
