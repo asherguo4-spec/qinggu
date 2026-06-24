@@ -60,7 +60,8 @@ app.post("/api/ark-completions", async (req, res) => {
   }
 
   try {
-    console.log(`[Ark Chat completions] Using model EP: ${req.body.model}`);
+    const model = req.body?.model || "ep-20250225134706-f7rjw";
+    console.log(`[Ark Chat completions] Using model EP: ${model}`);
 
     const arkRes = await fetch("https://ark.cn-beijing.volces.com/api/v3/chat/completions", {
       method: "POST",
@@ -68,7 +69,7 @@ app.post("/api/ark-completions", async (req, res) => {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(req.body || {})
     });
 
     const data = await arkRes.json();
@@ -91,7 +92,8 @@ app.post("/api/ark-images-generations", async (req, res) => {
   }
 
   try {
-    console.log(`[Ark Image Generation] Using model EP: ${req.body.model}`);
+    const model = req.body?.model || "ep-20250225134706-f7rjw";
+    console.log(`[Ark Image Generation] Using model EP: ${model}`);
 
     const arkRes = await fetch("https://ark.cn-beijing.volces.com/api/v3/images/generations", {
       method: "POST",
@@ -99,7 +101,7 @@ app.post("/api/ark-images-generations", async (req, res) => {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(req.body || {})
     });
 
     const data = await arkRes.json();
