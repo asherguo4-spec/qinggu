@@ -74,7 +74,8 @@ app.post("/api/ark-completions", async (req, res) => {
 
     const data = await arkRes.json();
     if (!arkRes.ok) {
-      console.error(`[Ark Chat] Error response for model ${req.body.model}:`, JSON.stringify(data));
+      const errorModel = req.body?.model || "unknown";
+      console.error(`[Ark Chat] Error response for model ${errorModel}:`, JSON.stringify(data));
       return res.status(arkRes.status).json(data);
     }
     return res.json(data);
@@ -106,7 +107,8 @@ app.post("/api/ark-images-generations", async (req, res) => {
 
     const data = await arkRes.json();
     if (!arkRes.ok) {
-      console.error(`[Ark Image] Error response for model ${req.body.model}:`, JSON.stringify(data));
+      const errorModel = req.body?.model || "unknown";
+      console.error(`[Ark Image] Error response for model ${errorModel}:`, JSON.stringify(data));
       return res.status(arkRes.status).json(data);
     }
     return res.json(data);
@@ -132,7 +134,7 @@ function getAifadianSign(params: string, ts: number) {
 
 app.post("/api/checkout", (req, res) => {
   try {
-    const { email, amount = 299, orderId } = req.body;
+    const { email, amount = 299, orderId } = req.body || {};
     if (!email) {
       return res.status(400).json({ error: "Missing email" });
     }
