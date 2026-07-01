@@ -73,7 +73,7 @@ app.post("/api/ark-completions", async (req, res) => {
 
     const data = await arkRes.json();
     if (!arkRes.ok) {
-      console.error(`[Ark Chat] Error response for model ${req.body.model}:`, JSON.stringify(data));
+      console.error(`[Ark Chat] Error response for model ${model}:`, JSON.stringify(data));
       return res.status(arkRes.status).json(data);
     }
     return res.json(data);
@@ -105,7 +105,7 @@ app.post("/api/ark-images-generations", async (req, res) => {
 
     const data = await arkRes.json();
     if (!arkRes.ok) {
-      console.error(`[Ark Image] Error response for model ${req.body.model}:`, JSON.stringify(data));
+      console.error(`[Ark Image] Error response for model ${model}:`, JSON.stringify(data));
       return res.status(arkRes.status).json(data);
     }
     return res.json(data);
