@@ -57,14 +57,18 @@ app.post("/api/upload", async (req, res) => {
 
 // Proxy route for Ark Chat API (Securely hide API Key on the server)
 app.post("/api/ark-completions", async (req, res) => {
-  const apiKey = process.env.VOLCENGINE_API_KEY || process.env.ARK_API_KEY;
+  let apiKey = process.env.VOLCENGINE_API_KEY || process.env.ARK_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: { message: "未配置 ARK API Key" } });
   }
+  
+  // Clean up the API key in case user accidentally added quotes, spaces, or 'Bearer ' prefix in .env
+  apiKey = apiKey.replace(/^Bearer\s+/i, '').replace(/^["']|["']$/g, '').trim();
 
   try {
     const model = req.body?.model || "ep-20250225134706-f7rjw";
     console.log(`[Ark Chat completions] Using model EP: ${model}`);
+    console.log(`[Ark Chat completions] API Key starts with: ${apiKey.substring(0, 4)}... length: ${apiKey.length}`);
 
     const arkRes = await fetch("https://ark.cn-beijing.volces.com/api/v3/chat/completions", {
       method: "POST",
@@ -89,14 +93,18 @@ app.post("/api/ark-completions", async (req, res) => {
 
 // Proxy route for Ark Image Generation API
 app.post("/api/ark-images-generations", async (req, res) => {
-  const apiKey = process.env.VOLCENGINE_API_KEY || process.env.ARK_API_KEY;
+  let apiKey = process.env.VOLCENGINE_API_KEY || process.env.ARK_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: { message: "未配置 ARK API Key" } });
   }
 
+  // Clean up the API key in case user accidentally added quotes, spaces, or 'Bearer ' prefix in .env
+  apiKey = apiKey.replace(/^Bearer\s+/i, '').replace(/^["']|["']$/g, '').trim();
+
   try {
     const model = req.body?.model || "ep-20250225134706-f7rjw";
     console.log(`[Ark Image Generation] Using model EP: ${model}`);
+    console.log(`[Ark Image Generation] API Key starts with: ${apiKey.substring(0, 4)}... length: ${apiKey.length}`);
 
     const arkRes = await fetch("https://ark.cn-beijing.volces.com/api/v3/images/generations", {
       method: "POST",
