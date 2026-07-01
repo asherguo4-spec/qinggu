@@ -12,7 +12,9 @@ export class SelindellAIService {
       body.response_format = responseFormat;
     }
 
-    const response = await fetch("/api/ark-completions", {
+    // Determine base URL dynamically or fallback to current origin
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+    const response = await fetch(`${baseUrl}/api/ark-completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -36,7 +38,8 @@ export class SelindellAIService {
   }
 
   private async callArkImageAPI(model: string, prompt: string, signal?: AbortSignal) {
-    const response = await fetch("/api/ark-images-generations", {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+    const response = await fetch(`${baseUrl}/api/ark-images-generations`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

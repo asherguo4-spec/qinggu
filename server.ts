@@ -4,7 +4,11 @@ import path from "path";
 import crypto from "crypto";
 import fetch from "cross-fetch";
 
+import cors from "cors";
+
 const app = express();
+
+app.use(cors());
 
 // 1. 跨域放行 (Move to very top)
 app.use((req, res, next) => {
